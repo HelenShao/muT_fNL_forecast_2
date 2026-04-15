@@ -18,3 +18,4 @@ forecast.txt
 *.swp
 .idea/
 .vscode/
+*.pdf
