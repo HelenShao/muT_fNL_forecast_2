@@ -207,8 +207,8 @@ def fisher_muT_general(
         If True, include A_s as a third parameter (K column dC/dA_s)
     include_k_Df :
         If True, include k_{D,f} (Mpc^{-1}) as a nuisance parameter. Use analytic
-        `\partial b/\partial k_{D,f}` when ``use_b_analytic``; otherwise
-        :func:`b_integral.db_dkdf_central` (finite difference in ``k_{D,f}`` with step ``dkdf_step``).
+        d b / d k_{D,f} when ``use_b_analytic``; otherwise ``b_integral.db_dkdf_central``
+        (finite difference in ``k_{D,f}`` with step ``dkdf_step``).
     dkdf_step :
         Half-step (Mpc^{-1}) for ``db_dkdf_central`` when ``use_b_analytic`` is False.
     sigma_k_Df_prior :

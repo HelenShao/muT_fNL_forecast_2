@@ -121,7 +121,7 @@ def db_dns_central(
 
 
 def db_dkdf_analytic(ns: float, k_D_f: float) -> float:
-    r"""Leading PZ :math:`b_{\mathrm{analytic}}`: :math:`\partial b/\partial k_{D,f}=(n_s-1)/(2 k_{D,f})`."""
+    r"""Leading PZ b_analytic: d b / d k_{D,f} = (n_s-1)/(2 k_{D,f})."""
     return 0.5 * (ns - 1.0) / k_D_f
 
 
@@ -137,7 +137,7 @@ def db_dkdf_central(
 ) -> float:
     """
     \partial b/\partial k_{D,f} from symmetric finite differences of ``b_ell_ns``.
-    Use when ``use_b_analytic=False``; match ``h`` to ``dns_step`` scale (e.g. \(\sim 0.1\!-\!1\) Mpc\(^{-1}\)).
+    Use when ``use_b_analytic=False``; match ``h`` to ``dns_step`` scale (e.g. ~0.1--1 Mpc^{-1}).
     """
     return (
         b_ell_ns(ell, ns, k_D_i=k_D_i, k_D_f=k_D_f + h, k_p=k_p, **kwargs)

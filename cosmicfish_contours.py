@@ -239,7 +239,7 @@ def build_muT_fisher(
 
 
 def _axis_label_is_ns(label: str) -> bool:
-    """Detect CosmicFish/matplotlib axis label for :math:`n_s` (string may include ``$...$``)."""
+    """Detect CosmicFish/matplotlib axis label for n_s (string may include ``$...$``)."""
     if not label:
         return False
     s = label.strip()
