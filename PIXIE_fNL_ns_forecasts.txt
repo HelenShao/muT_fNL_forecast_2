@@ -1,0 +1,14 @@
+fNL Fisher forecast
+l range: 2...85, FWHM = 1.6 deg, n_s = 0.965
+Planck prior on n_s: sigma(ns) = 0.004
+
+1D Fisher (analytic b, fix n_s): F = 4.018590e-07,  sigma(f_NL) = 1.577477e+03
+1D Fisher (numerical b(l,n_s), fix n_s): F = 3.690301e-08,  sigma(f_NL) = 5.205580e+03
+
+    f_NL fid  sigma_unmarg    sigma_marg  sigma_ns marg  corr(f_NL,n_s)
+----------------------------------------------------------------------
+           0  5.205580e+03  5.205580e+03  4.000000e-03        0.0000
+           1  5.205580e+03  5.205580e+03  4.000000e-03       -0.0000
+           5  5.205580e+03  5.205580e+03  4.000000e-03       -0.0001
+       12500  5.205580e+03  5.253609e+03  4.000000e-03       -0.1349
+       25000  5.205580e+03  5.395132e+03  4.000000e-03       -0.2627

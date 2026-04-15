@@ -1,0 +1,23 @@
+fNL Fisher forecast — 4D (f_NL, n_s, A_s, k_{D,f})
+l range: 2...85, FWHM = 1.6 deg, n_s = 0.965
+A_s fid (Delta_R^2 at pivot): 2.387324e-09
+k_D,i = 11000 Mpc^-1, k_D,f = 46 Mpc^-1, k_p = 0.002 Mpc^-1
+mu noise: SPECTER (w_mu^-1 from beam.N_mu_mu)
+Planck prior on n_s: sigma(ns) = 0.004
+Planck-scale prior on A_s (Delta_R^2 at pivot): sigma(A_s) = 2.940000e-11 (see SIGMA_AS_PLANCK2018 in spectra.py)
+External prior on k_D,f: sigma(k_D,f) = 10000 Mpc^-1 (regularizes Fisher when f_NL^fid=0, since dC/dn_s and dC/dk_D,f scale as f_NL)
+use_b_analytic = False; dns_step = 5e-05; dkdf_step = 0.5 Mpc^-1
+
+1D Fisher (analytic b=1, fix nuisances): F = 1.306042e-04,  sigma(f_NL) = 8.750270e+01
+1D Fisher (b(l,n_s) style, fix nuisances): F = 1.199348e-05,  sigma(f_NL) = 2.887536e+02
+
+Note: sigma(k_D,f) can sit near the external k_D,f prior when |corr(f_NL,k_D,f)| ~ 1 (strong degeneracy in the muT template).
+
+    f_NL fid    sigma_unmarg     sigma_fNL_m      sigma_ns_m      sigma_As_m     sigma_kDf_m    corr(fNL,ns)   corr(fNL,kDf)
+------------------------------------------------------------------------------------------------------------------------------
+           0    2.887536e+02    2.887536e+02    4.000000e-03    2.940000e-11    1.000000e+04          0.0000          0.0000
+           1    2.887536e+02    2.924399e+02    4.000000e-03    2.940000e-11    1.000000e+04         -0.0002          0.1583
+           5    2.887536e+02    3.700532e+02    4.000000e-03    2.940000e-11    1.000000e+04         -0.0008          0.6254
+       12500    2.887536e+02    5.785799e+05    4.000000e-03    2.940000e-11    1.000000e+04         -0.0012          1.0000
+       25000    2.887536e+02    1.157160e+06    4.000000e-03    2.940000e-11    1.000000e+04         -0.0012          1.0000
+

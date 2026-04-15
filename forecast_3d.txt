@@ -1,0 +1,15 @@
+muT Fisher forecast — 3 parameters (f_NL, n_s, A_s)
+  l range: 2…85, FWHM = 1.6°, n_s = 0.965
+  A_s fid (Delta_R^2 at pivot): 2.387324e-09
+  Prior sigma(n_s) = 0.004
+  Prior sigma(A_s) = 2.940000e-11 (Planck 2018 order-of-magnitude; see spectra.py)
+  numerical b(l, n_s), dns_step = 5e-5
+
+    f_NL fid     sigma(f_NL)      sigma(n_s)      sigma(A_s)  corr(f_NL,n_s)  corr(f_NL,A_s)
+--------------------------------------------------------------------------------------------------
+           0    5.095595e+03    4.000000e-03    2.940000e-11          0.0000         -0.0000
+           1    5.095595e+03    4.000000e-03    2.940000e-11         -0.0000         -0.0000
+       12500    5.144651e+03    4.000000e-03    2.940000e-11         -0.1378         -0.0000
+       25000    5.289091e+03    4.000000e-03    2.940000e-11         -0.2680         -0.0000
+
+Full marginalized covariance cov = F_total^{-1} is in FisherMuTResult.cov_marginal (3x3).
