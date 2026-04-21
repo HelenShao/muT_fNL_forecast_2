@@ -1,57 +1,4 @@
-r"""
-Contour / triangle plots from a Fisher matrix using the **CosmicFish** Python library
-(`cosmicfish_pylib`), which expects a precomputed Fisher matrix — **no MCMC chains**.
-
-Documentation:
-  - https://cosmicfish.github.io/documentation/CosmicFishPyLib/introduction.html
-  - https://cosmicfish.github.io/documentation/CosmicFishPyLib/example.html.
-
-Setup::
-
-    git clone https://github.com/CosmicFish/CosmicFish.git
-    export COSMICFISH_PYTHON=/tmp/CosmicFish/python   # export is required
-
-Or one shot: ``COSMICFISH_PYTHON=... python3 cosmicfish_contours.py`` (variable prefix on the same line as the command).
-
-Run with the bundled muT Fisher (same spirit as ``contours.py`` / ``main_3d.py``)::
-
-    python3 cosmicfish_contours.py
-
-**Noise / degeneracy:** The mu-noise scale ``w_mu_inv`` strongly affects the
-``f_{\mathrm{NL}}``–``n_s`` correlation. For SPECTER, run with ``--w-mu specter``
-(here) and ``--specter`` in ``contours.py``. Defaults are PIXIE on both.
-
-**PIXIE/SPECTER overlay (§4d):** run this script twice (PIXIE vs SPECTER ``--w-mu`` /
-``build_muT_fisher`` settings) into separate output directories, then combine panels in
-LaTeX or a small ``matplotlib`` overlay script using the exported Fisher matrices.
-
-**2 vs 3 parameters:** A **3×3** Fisher (default here, with ``A_s`` + priors) gives
-**marginal** ``f_{\mathrm{NL}}``–``n_s`` contours that match the triple-panel figures
-in ``contours.py``. Use ``--two-param-only`` only when you want the legacy
-**2-parameter** Fisher (no ``A_s``), as in ``contours_legacy_2param_fnl_ns.pdf``.
-
-Use pre-computed symmetric Fisher matrix (text file, whitespace-separated)::
-
-    python3 cosmicfish_contours.py --fisher-file my_F.dat \\
-        --param-names fnl,ns,As --fiducial 25000,0.965,<A_s fiducial>
-
-**CosmicFish vs raw Fisher:** The library’s ``fisher_matrix`` runs ``protect_degenerate()``,
-which **rewrites** ``F`` when its condition number exceeds an internal threshold. That can
-erase the physical ``f_{\mathrm{NL}}``–``n_s`` degeneracy. This script **disables** that
-step by default so ``get_fisher_inverse()`` agrees with ``numpy.linalg.inv(F)`` and with
-``contours.py``. Use ``--allow-cosmicfish-protect`` only if you want stock CosmicFish
-behavior.
-
-**``A_s`` axis / triangle plots:** Marginal \(\sigma(A_s)\) is \(\sim 10^{-11}\) while
-\(\sigma(f_{\mathrm{NL}})\) is \(\sim 10^{3}\). CosmicFish’s automatic axis limits then
-collapse the \(A_s\) direction so \((f_{\mathrm{NL}},A_s)\) and \((n_s,A_s)\) panels look
-like flat lines. By default this script **reparameterizes** the third parameter to
-\(10^{9}A_s\) (Jacobian applied to ``F`` and fiducial). Use ``--no-as-scale`` for raw
-\(A_s\) (not recommended for CosmicFish triangle plots).
-
-**Note:** The unrelated PyPI package named ``cosmicfish`` is not this library; need the
-GitHub repo ``python/`` directory on ``PYTHONPATH``.
-"""
+'Contour / triangle plots from a Fisher matrix using the **CosmicFish** Python library.'
 
 from __future__ import annotations
 
@@ -68,7 +15,7 @@ except ImportError:
     from plot_params import apply_plot_params
 
 
-def _resolve_cosmicfish_python(explicit: Path | None) -> Path:
+def _resolve_cosmicfish_python(explicit):
     if explicit is not None:
         root = explicit.resolve()
     else:
@@ -97,7 +44,7 @@ def _resolve_cosmicfish_python(explicit: Path | None) -> Path:
     return root
 
 
-def _import_cosmicfish(root: Path):
+def _import_cosmicfish(root):
     sys.path.insert(0, str(root))
     import cosmicfish_pylib.fisher_matrix as fm
     import cosmicfish_pylib.fisher_plot as fp
@@ -106,12 +53,8 @@ def _import_cosmicfish(root: Path):
     return fm, fp, fpa
 
 
-def _disable_cosmicfish_fisher_protection(fm_module) -> None:
-    """
-    CosmicFish ``protect_degenerate()`` rebuilds F when cond(F) is large (e.g. muT Fisher
-    with very different scales on parameters). That is **not** the same as ``inv(F)`` and
-    flattens real correlations. Replace with a no-op so ellipses use the input Fisher matrix.
-    """
+def _disable_cosmicfish_fisher_protection(fm_module):
+    """Disable CosmicFish Fisher protection so plots use the input matrix directly."""
 
     def _protect_noop(self, cache=True):
         return None
@@ -119,26 +62,26 @@ def _disable_cosmicfish_fisher_protection(fm_module) -> None:
     fm_module.fisher_matrix.protect_degenerate = _protect_noop
 
 
-def _symmetrize_fisher(F: np.ndarray) -> np.ndarray:
+def _symmetrize_fisher(F):
     F = np.asarray(F, dtype=float)
     if F.ndim != 2 or F.shape[0] != F.shape[1]:
         raise ValueError("Fisher matrix must be square 2D")
     return 0.5 * (F + F.T)
 
 
-def _load_fisher_file(path: Path) -> np.ndarray:
+def _load_fisher_file(path):
     return _symmetrize_fisher(np.loadtxt(path))
 
 
-def _parse_csv_strings(s: str) -> list[str]:
+def _parse_csv_strings(s):
     return [x.strip() for x in s.split(",") if x.strip()]
 
 
-def _parse_csv_floats(s: str) -> list[float]:
+def _parse_csv_floats(s):
     return [float(x.strip()) for x in s.split(",") if x.strip()]
 
 
-def _default_latex(names: list[str]) -> list[str]:
+def _default_latex(names):
     """Reasonable axis labels for standard muT parameter names."""
     m = {
         "fnl": r"f_{\mathrm{NL}}",
@@ -153,18 +96,13 @@ def _default_latex(names: list[str]) -> list[str]:
 
 
 def rescale_fisher_As_to_1e9(
-    F: np.ndarray,
-    fid: list[float],
-    names: list[str],
+    F,
+    fid,
+    names,
     *,
-    scale: float,
-) -> tuple[np.ndarray, list[float], list[str]]:
-    r"""
-    If the third parameter is ``As``, use \(\theta_3' = s \theta_3\) with \(s=10^9\).
-
-    Then \(F' = D^{-1} F D^{-1}\) with \(D=\mathrm{diag}(1,1,s)\) so
-    \(\Delta\chi^2 = \delta\theta^\top F \delta\theta\) is preserved.
-    """
+    scale,
+):
+    r"""Rescale the As parameter axis and transform the Fisher matrix consistently."""
     if len(names) != 3 or names[2] != "As":
         return F, fid, names
     s = float(scale)
@@ -178,17 +116,13 @@ def rescale_fisher_As_to_1e9(
 
 
 def rescale_fisher_ad_scale(
-    F: np.ndarray,
-    fid: list[float],
-    names: list[str],
+    F,
+    fid,
+    names,
     *,
-    scale: float = 1e12,
-) -> tuple[np.ndarray, list[float], list[str]]:
-    r"""
-    Reparameterize dust amplitude \(A_D' = s A_D\) for CosmicFish axes (\(A_D\) is \(\sim 10^{-12}\) dimensionless).
-
-    \(F' = D^{-1} F D^{-1}\) with \(D\) diagonal, entry \(1/s\) on the ``A_D`` parameter.
-    """
+    scale = 1e12,
+):
+    r"""Rescale the dust-amplitude parameter axis and transform the Fisher matrix."""
     names = list(names)
     fid = list(fid)
     if "A_D" not in names:
@@ -205,7 +139,7 @@ def rescale_fisher_ad_scale(
     return Fp, fid, names
 
 
-def _rho_fnl_ns_marginal(F: np.ndarray) -> float | None:
+def _rho_fnl_ns_marginal(F):
     """Pearson corr(f_NL, n_s) from cov = F^{-1} (upper-left 2×2 block)."""
     cov = np.linalg.inv(F)
     sub = cov[np.ix_([0, 1], [0, 1])]
@@ -217,10 +151,10 @@ def _rho_fnl_ns_marginal(F: np.ndarray) -> float | None:
 
 def build_muT_fisher(
     *,
-    three_params: bool,
-    w_mu_label: str,
-    fnl_fid: float = 25_000.0,
-) -> tuple[np.ndarray, list[str], list[float]]:
+    three_params,
+    w_mu_label,
+    fnl_fid = 25_000.0,
+):
     from beam import W_MU_INV_PIXIE, W_MU_INV_SPECTER
     from fisher_matrix import (
         AS_FID_LEGACY,
@@ -288,7 +222,7 @@ MU_T_CF_LEGEND_NUDGE_DX: float = 0.028
 MU_T_CF_LEGEND_NUDGE_DY: float = 0.028
 
 
-def _axis_label_is_ns(label: str) -> bool:
+def _axis_label_is_ns(label):
     """Detect CosmicFish/matplotlib axis label for n_s (string may include ``$...$``)."""
     if not label:
         return False
@@ -296,7 +230,7 @@ def _axis_label_is_ns(label: str) -> bool:
     return "n_{s}" in s or "n_s" in s
 
 
-def _axis_label_is_alpha_d(label: str) -> bool:
+def _axis_label_is_alpha_d(label):
     """Detect axis label for dust spectral index ``\\alpha_D``."""
     if not label:
         return False
@@ -304,7 +238,7 @@ def _axis_label_is_alpha_d(label: str) -> bool:
     return "alpha_D" in s or r"\alpha_D" in s
 
 
-def format_ns_ticks_3f(fig, tick_fontsize: float | None = None) -> None:
+def format_ns_ticks_3f(fig, tick_fontsize = None):
     """Replace major tick labels with ``%.3f`` on ``n_s`` axes."""
     for ax in fig.get_axes():
         if _axis_label_is_ns(ax.get_xlabel()):
@@ -329,7 +263,7 @@ def format_ns_ticks_3f(fig, tick_fontsize: float | None = None) -> None:
             ax.yaxis.get_offset_text().set_visible(False)
 
 
-def format_alpha_d_ticks_2f(fig, tick_fontsize: float | None = None) -> None:
+def format_alpha_d_ticks_2f(fig, tick_fontsize = None):
     """Replace major tick labels with ``%.2f`` on ``\\alpha_D`` axes (section 4 dust Fisher)."""
     for ax in fig.get_axes():
         if _axis_label_is_alpha_d(ax.get_xlabel()):
@@ -354,13 +288,8 @@ def format_alpha_d_ticks_2f(fig, tick_fontsize: float | None = None) -> None:
             ax.yaxis.get_offset_text().set_visible(False)
 
 
-def _nudge_triangle_legend_closer(plotter) -> None:
-    """
-    Shift the triangle legend anchor slightly toward the panels (down-left in figure coords).
-
-    Uses the same gridspec cell CosmicFish reserves for the legend (row 0, last column),
-    not ``Legend.get_bbox_to_anchor()`` (often a composite transform, not ``transFigure``).
-    """
+def _nudge_triangle_legend_closer(plotter):
+    """Shift the triangle legend anchor slightly closer to the panel grid."""
     leg = getattr(plotter, "legend", None)
     grid = getattr(plotter, "plot_grid", None)
     if leg is None or grid is None:
@@ -379,13 +308,10 @@ def _nudge_triangle_legend_closer(plotter) -> None:
 def finish_mu_t_cosmicfish_plot(
     plotter,
     *,
-    dust_alpha_d: bool = False,
-    nudge_triangle_legend: bool = False,
-) -> None:
-    """
-    After ``plot_tri`` / ``plot2D`` / ``plot1D``: format ``n_s`` / ``\\alpha_D`` ticks,
-    bump axis/tick/title/legend font sizes, and optionally nudge the triangle legend toward the panels.
-    """
+    dust_alpha_d = False,
+    nudge_triangle_legend = False,
+):
+    """Apply final muT CosmicFish formatting to labels, ticks, titles, and legend."""
     fig = plotter.figure
     format_ns_ticks_3f(fig, tick_fontsize=MU_T_CF_TICK_FS)
     if dust_alpha_d:
@@ -416,11 +342,11 @@ def finish_mu_t_cosmicfish_plot(
 
 def make_cosmicfish_fisher_object(
     fm,
-    F: np.ndarray,
-    param_names: list[str],
-    fiducial: list[float],
-    param_names_latex: list[str] | None,
-    name: str,
+    F,
+    param_names,
+    fiducial,
+    param_names_latex,
+    name,
 ):
     latex = param_names_latex if param_names_latex is not None else _default_latex(param_names)
     if len(latex) != len(param_names):
@@ -440,7 +366,7 @@ def make_cosmicfish_fisher_object(
 MU_T_COSMICFISH_D2_ALPHAS: tuple[float, float] = (0.0, 0.6)
 
 
-def mu_t_cosmicfish_plot_style(fisher_names: list[str]) -> dict[str, object]:
+def mu_t_cosmicfish_plot_style(fisher_names):
     """Dashed PIXIE, solid otherwise; 2D fills for ~1σ only; larger fonts for §3/§4 figures."""
     return {
         "linestyle": ["--" if str(n).upper() == "PIXIE" else "-" for n in fisher_names],
@@ -460,12 +386,12 @@ def run_plots(
     fpa,
     fish,
     *,
-    outdir: Path,
-    prefix: str,
-    triangle: bool,
-    plot_1d: bool,
-    show: bool,
-) -> list[Path]:
+    outdir,
+    prefix,
+    triangle,
+    plot_1d,
+    show,
+):
     outdir.mkdir(parents=True, exist_ok=True)
     analysis = fpa.CosmicFish_FisherAnalysis(fisher_list=fish)
     _style = mu_t_cosmicfish_plot_style(list(analysis.fisher_name_list))
@@ -515,7 +441,7 @@ def run_plots(
     return saved
 
 
-def main(argv: list[str] | None = None) -> None:
+def main(argv = None):
     _script_dir = Path(__file__).resolve().parent
     if str(_script_dir) not in sys.path:
         sys.path.insert(0, str(_script_dir))

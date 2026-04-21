@@ -29,16 +29,16 @@ class FisherMuTResult:
 
 
 def _K_derivatives(
-    ell: np.ndarray,
-    fnl_fid: float,
-    ns_fid: float,
-    k_D_i: float,
-    k_D_f: float,
-    k_p: float,
-    dns_step: float,
-    use_b_analytic: bool,
-    b_kw: dict[str, Any],
-) -> tuple[np.ndarray, np.ndarray]:
+    ell,
+    fnl_fid,
+    ns_fid,
+    k_D_i,
+    k_D_f,
+    k_p,
+    dns_step,
+    use_b_analytic,
+    b_kw,
+):
     """dC^{muT}/df_NL and dC^{muT}/dn_s with C^{muT} = f_NL * b * T_l"""
     ell_i = ell.astype(int)
     T = T_muT_ell(ell)
@@ -61,31 +61,20 @@ def _K_derivatives(
 
 
 def fisher_muT_fnl_ns(
-    ell: np.ndarray,
-    fwhm_deg: float,
-    fnl_fid: float,
-    ns_fid: float,
-    k_D_i: float,
-    k_D_f: float,
-    k_p: float,
+    ell,
+    fwhm_deg,
+    fnl_fid,
+    ns_fid,
+    k_D_i,
+    k_D_f,
+    k_p,
     *,
-    dns_step: float = 5e-5,
-    sigma_ns_prior: float | None = 0.004,
-    use_b_analytic: bool = False,
-    b_integral_kw: dict[str, Any] | None = None,
-) -> FisherMuTResult:
-    """
-    Gaussian Fisher for muT band powers:
-
-        F_ij = sigma_l (dC_l/dtheta_i)(dC_l/dtheta_j) / sigma_l^2,
-
-    with sigma_l^2 ≃ C_l^{TT} C_l^{mumu,N} / (2l+1). supports Planck gaussian prior on ns
-    ----------
-    use_b_analytic :
-        If True, use constant b_analytic(ns) and analytic db/dn_s (matches simple 1D tests)
-    b_integral_kw :
-        Extra keyword arguments for b_ell_ns / db_dns_central (e.g. ell_ref, grids)
-    """
+    dns_step = 5e-5,
+    sigma_ns_prior = 0.004,
+    use_b_analytic = False,
+    b_integral_kw = None,
+):
+    """Compute the Gaussian two-parameter Fisher matrix for (f_NL, n_s)."""
     b_kw = dict(b_integral_kw or {})
     cl_tt = Cl_TT(ell)
     n_mumu = N_mu_mu(ell, fwhm_deg)
@@ -133,17 +122,17 @@ def fisher_muT_fnl_ns(
 
 
 def fisher_1d_fnl_only(
-    ell: np.ndarray,
-    fwhm_deg: float,
-    ns_fid: float,
-    k_D_i: float,
-    k_D_f: float,
-    k_p: float,
+    ell,
+    fwhm_deg,
+    ns_fid,
+    k_D_i,
+    k_D_f,
+    k_p,
     *,
-    use_b_analytic: bool = True,
-    b_integral_kw: dict[str, Any] | None = None,
-) -> float:
-    """Single-parameter Fisher F = sigma (dC/df_NL)^2/sigma^2; useful to cross check w/ fisher_pajer.py."""
+    use_b_analytic = True,
+    b_integral_kw = None,
+):
+    """Compute the single-parameter Fisher information for f_NL."""
     b_kw = dict(b_integral_kw or {})
     cl_tt = Cl_TT(ell)
     n_mumu = N_mu_mu(ell, fwhm_deg)
@@ -159,6 +148,6 @@ def fisher_1d_fnl_only(
     return float(np.sum(K_fnl**2 / var))
 
 
-def default_ell_grid(fwhm_deg: float, ell_min: int = 2) -> np.ndarray:
+def default_ell_grid(fwhm_deg, ell_min = 2):
     lmax = ell_max_from_fwhm_deg(fwhm_deg)
     return np.arange(ell_min, int(np.ceil(lmax)) + 1, dtype=float)

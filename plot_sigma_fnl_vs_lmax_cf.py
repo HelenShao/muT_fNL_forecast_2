@@ -1,18 +1,4 @@
-r"""
-\(\sigma(f_{\rm NL})\) vs \(\ell_{\max}\) for many foreground cleaning factors \(c_f\), colored by \(c_f\).
-
-Uses ``fisher_muT_fnl_ns_with_dust`` with \(n_s\) marginalized (prior). Each \(c_f\) produces one
-curve; line color maps to \(c_f\) (colorbar). Default uses many \(c_f\) samples so the colormap is smooth.
-
-Outputs are **tagged by** \(f_{\rm NL}^{\rm fid}\) so batch runs do not overwrite:
-``sigma_fnl_vs_lmax_cf_{experiment}_fnl{tag}.png``, matching ``.csv`` / ``.txt`` / run ``.json``.
-
-Run::
-
-    python3 plot_sigma_fnl_vs_lmax_cf.py --experiment specter --fnl-fid 1
-
-    python3 plot_sigma_fnl_vs_lmax_cf.py --section4-config path/to/logs/config.json --experiment specter
-"""
+'\\(\\sigma(f_{\\rm NL})\\) vs \\(\\ell_{\\max}\\) for many foreground cleaning factors \\(c_f\\), colored by \\(c_f\\).'
 
 from __future__ import annotations
 
@@ -45,19 +31,19 @@ XLIM_MAX = 700
 YLIM_SIGMA_FNL = (1.0e3, 1.0e5)
 
 
-def _fnl_file_tag(fnl: float) -> str:
+def _fnl_file_tag(fnl):
     if math.isfinite(fnl) and abs(fnl - round(fnl)) < 1e-9:
         return str(int(round(fnl)))
     return str(fnl).replace(".", "p")
 
 
-def _lmax_grid(n: int, lmax_cap: int) -> list[int]:
+def _lmax_grid(n, lmax_cap):
     cap = min(int(lmax_cap), LMAX_MAX)
     pts = np.unique(np.round(np.linspace(2, cap, n)).astype(int))
     return [int(x) for x in pts if x >= 2]
 
 
-def _fnl_list_from_args(args: argparse.Namespace) -> list[float]:
+def _fnl_list_from_args(args):
     if args.section4_config is not None:
         p = Path(args.section4_config).expanduser().resolve()
         data = json.loads(p.read_text(encoding="utf-8"))
@@ -75,14 +61,14 @@ def _fnl_list_from_args(args: argparse.Namespace) -> list[float]:
 
 def run_one_fnl(
     *,
-    experiment: str,
-    fnl_fid: float,
-    n_cf: int,
-    n_lmax: int,
-    lmax_cap: int,
-    numerical_b: bool,
-    pipeline: str,
-) -> None:
+    experiment,
+    fnl_fid,
+    n_cf,
+    n_lmax,
+    lmax_cap,
+    numerical_b,
+    pipeline,
+):
     tag = _fnl_file_tag(float(fnl_fid))
     camb = "camb" in pipeline
     cl_tt_dir = str(Path(__file__).resolve().parent) if camb else None
@@ -214,7 +200,7 @@ def run_one_fnl(
     print(out_pdf.resolve(), flush=True)
 
 
-def main() -> None:
+def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--experiment", choices=("pixie", "specter"), default="specter")
     ap.add_argument(

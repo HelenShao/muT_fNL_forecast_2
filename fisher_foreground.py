@@ -1,19 +1,4 @@
-r"""
-Foreground residual (dust) contribution to \(\mu T\) band-power variance — 
-\(C_\ell \propto A_D (\ell/\ell_0)^{\alpha_D}\), scaled by cleaning factor \(c_f\).
-
-dust nuisances enter in \(\sigma_\ell^2\)); use
-``F_data`` + diagonal ``F_cov`` (parameter-dependent variance).
-
-Fiducial numbers from Azzoni et al.\ (polarized foreground paper): \(A_D=28\,\mu\mathrm{K}^2\),
-\(\alpha_D=-0.16\) at \(\ell_0=80\).
-
-**Units:** Convert to **dimensionless** \(C_\ell\)
-\(C_\ell^{\mathrm{dimless}} = C_\ell^{(\mu\mathrm{K}^2)} / T_{\mathrm{CMB}}^2\) with
-\(T_{\mathrm{CMB}}\) in \(\mu\mathrm{K}\) (FIRAS: \(T_{\mathrm{CMB}} \approx 2.72548\times 10^6\,\mu\mathrm{K}\)).
-The dust residual amplitude passed into ``dust_cl_azzoni`` is therefore
-``AZZONI_A_D_DIMENSIONLESS`` below, not raw \(\mu\mathrm{K}^2\).
-"""
+'Foreground residual (dust) contribution to \\(\\mu T\\) band-power variance —.'
 
 from __future__ import annotations
 
@@ -55,7 +40,7 @@ T_CMB_MICROK = 2.72548e6
 AZZONI_A_D_DIMENSIONLESS = AZZONI_A_D_MUK2 / (T_CMB_MICROK**2)
 
 
-def dust_cl_azzoni(ell: np.ndarray, A_D: float, alpha_D: float, ell0: float, c_f: float) -> np.ndarray:
+def dust_cl_azzoni(ell, A_D, alpha_D, ell0, c_f):
     r"""Residual dust proxy added to \(C_\ell^{\mu\mu,\mathrm{eff}}\): \(A_D (\ell/\ell_0)^{\alpha_D}/c_f\)."""
     ell = np.maximum(np.asarray(ell, dtype=float), 2.0)
     return (float(A_D) * (ell / float(ell0)) ** float(alpha_D)) / float(c_f)
@@ -72,41 +57,30 @@ class ForegroundFisherResult:
 
 
 def fisher_muT_fnl_ns_with_dust(
-    ell: np.ndarray,
-    fwhm_deg: float,
-    fnl_fid: float,
-    ns_fid: float,
-    k_D_i: float,
-    k_D_f: float,
-    k_p: float,
+    ell,
+    fwhm_deg,
+    fnl_fid,
+    ns_fid,
+    k_D_i,
+    k_D_f,
+    k_p,
     *,
-    w_mu_inv: float,
-    c_f: float,
-    A_D: float,
-    alpha_D: float = AZZONI_ALPHA_D,
-    ell0: float = ELL0_AZZONI,
-    As_fid: float = AS_FID_PLANCK2018,
-    dns_step: float = 5e-5,
-    sigma_ns_prior: float | None = 0.004,
-    sigma_AD_prior: float | None = None,
-    sigma_alpha_prior: float | None = None,
-    use_b_analytic: bool = False,
-    b_integral_kw: dict | None = None,
-    cl_tt_txt_dir: str | None = None,
-    marginalize_dust: bool = True,
-) -> ForegroundFisherResult:
-    """
-    Fisher for ``(f_NL, n_s)`` plus, if ``marginalize_dust``, nuisance amplitudes ``(A_D, \\alpha_D)``.
-
-    Dust residual enters the band-power **variance** only. With ``marginalize_dust=True`` (default),
-    the Fisher is 4×4 and foreground amplitudes are marginalized (with optional priors). With
-    ``marginalize_dust=False``, only ``(f_NL, n_s)`` are free: residual dust is fixed at the
-    fiducial ``(A_D, \\alpha_D, c_f)`` (no uncertainty on those nuisance parameters).
-
-    ``cl_tt_txt_dir`` :
-        If set, load fiducial CAMB ``C_\ell^{TT}`` from ``spectra.load_ClTT_planck18`` in that
-        directory (same convention as ``fisher_muT_general``).
-    """
+    w_mu_inv,
+    c_f,
+    A_D,
+    alpha_D = AZZONI_ALPHA_D,
+    ell0 = ELL0_AZZONI,
+    As_fid = AS_FID_PLANCK2018,
+    dns_step = 5e-5,
+    sigma_ns_prior = 0.004,
+    sigma_AD_prior = None,
+    sigma_alpha_prior = None,
+    use_b_analytic = False,
+    b_integral_kw = None,
+    cl_tt_txt_dir = None,
+    marginalize_dust = True,
+):
+    """Compute the foreground-aware Fisher matrix with optional dust-parameter marginalization."""
     b_kw = dict(b_integral_kw or {})
     if cl_tt_txt_dir is not None:
         _bundle = load_ClTT_planck18(cl_tt_txt_dir)

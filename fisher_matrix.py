@@ -1,12 +1,4 @@
-r"""Fisher matrix for C_l^{\mu T}: f_NL, n_s, optional A_s.
-
-Supports multiple parameter configs (1x1, 2x2, 3x3, ...).
-
-Gaussian Fisher for band powers (Tier A): weights 1/sigma_ell^2 evaluated at fiducial cosmology
-(``variance_at_fiducial=True``). Optional Tier B (full Gaussian Fisher including dsigma/d\theta) is
-documented in module comments -- diagonal multipoles would add
-  F_ij^cov = (1/2) sigma_ell sigma_ell^{-4} (dsigma_ell^2/d\theta_i)(dsigma_ell^2/d\theta_j).
-"""
+'Fisher matrix for C_l^{\\mu T}: f_NL, n_s, optional A_s.'
 
 from __future__ import annotations
 
@@ -92,9 +84,9 @@ class FisherMuTResult:
 
 
 def fisher_cov_term_diagonal(
-    var: np.ndarray,
-    dsigma2: dict[str, np.ndarray],
-    param_names: tuple[str, ...],
+    var,
+    dsigma2,
+    param_names,
 ):
     n = len(param_names)
     F = np.zeros((n, n), dtype=float)
@@ -112,20 +104,20 @@ def fisher_cov_term_diagonal(
 
 
 def _muT_bandpower_variance(
-    ell: np.ndarray,
-    variance_mode: str,
+    ell,
+    variance_mode,
     *,
-    cl_tt: np.ndarray,
-    fwhm_deg: float,
-    w_mu_inv: float,
-    fnl_fid: float,
-    b_arr: np.ndarray,
-    As_fid: float,
-    k_D_i: float,
-    k_D_f: float,
-    ns_fid: float,
-    k_p: float,
-    cl_tt_noise: np.ndarray | float,
+    cl_tt,
+    fwhm_deg,
+    w_mu_inv,
+    fnl_fid,
+    b_arr,
+    As_fid,
+    k_D_i,
+    k_D_f,
+    ns_fid,
+    k_p,
+    cl_tt_noise,
 ):
     if variance_mode == VARIANCE_PZ_INSTRUMENTAL_APPROX:
         n_mumu = N_mu_mu(ell, fwhm_deg, w_mu_inv=w_mu_inv)
@@ -152,18 +144,18 @@ def _muT_bandpower_variance(
 
 
 def _b_and_db(
-    ell: np.ndarray,
+    ell,
     ns_fid,
     k_D_i,
     k_D_f,
     k_p,
     dns_step,
-    use_b_analytic: bool,
-    b_kw: dict[str, Any],
-    b_override: float | None = None,
+    use_b_analytic,
+    b_kw,
+    b_override = None,
     *,
-    b_db_prec: tuple[np.ndarray, np.ndarray] | None = None,
-) -> tuple[np.ndarray, np.ndarray | float]:
+    b_db_prec = None,
+):
     ell_i = ell.astype(int)
     if b_db_prec is not None:
         b_arr, db_arr = b_db_prec
@@ -192,32 +184,24 @@ def _b_and_db(
 
 
 def _Cl_derivative_matrix(
-    ell: np.ndarray,
+    ell,
     fnl_fid,
     ns_fid,
     k_D_i,
     k_D_f,
     k_p,
     dns_step,
-    dkdf_step: float,
-    use_b_analytic: bool,
-    b_kw: dict[str, Any],
+    dkdf_step,
+    use_b_analytic,
+    b_kw,
     *,
     As_fid,
-    include_As: bool,
-    include_k_Df: bool,
-    b_override: float | None = None,
-    b_db_prec: tuple[np.ndarray, np.ndarray] | None = None,
-) -> tuple[np.ndarray, tuple[str, ...]]:
-    r"""
-    Rows = multipoles, columns = (dC_l^{\mu T}/d\theta_i).
-
-    C_l^{\mu T} = f_NL * b * T_l(A_s, k_D); evaluated at As_fid for K columns.
-    dC/dA_s = 2 * C / A_s at fixed f_NL, b, k_D.
-
-    For k_{D,f}: use analytic `\partial b/\partial k_{D,f}` when ``use_b_analytic``;
-    otherwise ``db_dkdf_central``
-    """
+    include_As,
+    include_k_Df,
+    b_override = None,
+    b_db_prec = None,
+):
+    r"""Build the derivative matrix of muT spectra with respect to model parameters."""
     ell_i = ell.astype(int)
     b, db_or_scalar = _b_and_db(
         ell,
@@ -275,7 +259,7 @@ def _Cl_derivative_matrix(
 
 
 def fisher_muT_general(
-    ell: np.ndarray,
+    ell,
     fwhm_deg,
     fnl_fid,
     ns_fid,
@@ -283,77 +267,27 @@ def fisher_muT_general(
     k_D_f,
     k_p,
     *,
-    w_mu_inv: float = W_MU_INV_PIXIE,
-    dns_step: float = 5e-5,
-    dkdf_step: float = 0.5,
-    sigma_ns_prior: float | None = 0.004,
-    sigma_As_prior: float | None = None,
-    sigma_k_Df_prior: float | None = None,
-    include_As: bool | None = None,
-    include_k_Df: bool = False,
-    As_fid: float = AS_FID_LEGACY,
-    use_b_analytic: bool = False,
-    b_override: float | None = None,
-    b_integral_kw: dict[str, Any] | None = None,
-    variance_at_fiducial: bool = True,
-    cl_tt_txt_dir: str | None = None,
-    variance_mode: str = VARIANCE_PZ_INSTRUMENTAL_APPROX,
-    cl_tt_noise: np.ndarray | float = 0.0,
-    include_covariance_derivative: bool = False,
-    dsigma2_wrt: dict[str, np.ndarray] | None = None,
-    b_db_prec: tuple[np.ndarray, np.ndarray] | None = None,
-) -> FisherMuTResult:
-    r"""
-    Gaussian Fisher for muT band powers.
-
-    **Mean term:** :math:`F^{\rm data}_{ij} = \sum_\ell \sigma_\ell^{-2}
-    (\partial C_\ell^{\mu T}/\partial\theta_i)(\partial C_\ell^{\mu T}/\partial\theta_j)` + priors.
-
-    **Variance:** ``variance_mode`` selects PZ instrumental approximation
-    (:math:`\sigma_\ell^2 \simeq C_\ell^{TT} C_\ell^{\mu\mu,N}/(2\ell+1)`) or the full Gaussian
-    band-power form via ``spectra.sigma2_muT_hat_full`` (CV-limited or with instrumental
-    :math:`C_\ell^{\mu\mu,N}`).
-
-    **Covariance derivative term:** if ``include_covariance_derivative`` and ``dsigma2_wrt`` are set,
-    adds ``fisher_cov_term_diagonal`` to ``F_total`` (diagonal :math:`C` in :math:`\ell`).
-
-    ----------
-    cl_tt_txt_dir :
-        If not ``None``, load CAMB ``C_l^{TT}`` from text files in this directory
-        (see ``planck_cosmology.save_planck2018_cltt_bundle`` / ``spectra.load_ClTT_planck18``).
-        Values are assumed to already be in the same dimensionless normalization used by
-        ``spectra.Cl_TT`` and are passed directly to ``sigma2_muT_hat``.
-
-    sigma_As_prior :
-        If not None, add ``1/sigma^2`` to the A_s diagonal of ``F_total``. Use
-        `SIGMA_AS_PLANCK2018` (Planck18 sigma(ln(10^10 A_s)) = 0.014)
-    include_As :
-        If True, include A_s as a third parameter (K column dC/dA_s)
-    include_k_Df :
-        If True, include k_{D,f} (Mpc^{-1}) as a nuisance parameter. Use analytic
-        d b / d k_{D,f} when ``use_b_analytic``; otherwise ``b_integral.db_dkdf_central``
-        (finite difference in ``k_{D,f}`` with step ``dkdf_step``).
-    dkdf_step :
-        Half-step (Mpc^{-1}) for ``db_dkdf_central`` when ``use_b_analytic`` is False.
-    sigma_k_Df_prior :
-        If not None, add ``1/\sigma^2`` on the ``k_Df`` diagonal of ``F_total``.
-    As_fid :
-        Fiducial primordial amplitude at the pivot used in the PZ template (matches legacy TT scale when default).
-    w_mu_inv :
-        ``w_\mu^{-1}`` in ``C_l^{\mu\mu,N}`` (see ``beam.N_mu_mu``). Use ``beam.W_MU_INV_PIXIE`` or
-        ``beam.W_MU_INV_SPECTER`` for PIXIE vs SPECTER. For ``full_gaussian_cv``, this should be ``0``.
-    b_override :
-        If not ``None``, fix ``b`` to this constant at all multipoles and set
-        ``\partial b / \partial n_s = 0`` (and ``\partial b / \partial k_{D,f} = 0`` if included).
-        This is useful for fixed-``b`` sensitivity tests.
-    variance_at_fiducial :
-    variance_mode :
-        ``pz_instrumental_approx`` (default), ``full_gaussian_cv``, or ``full_gaussian_noisy``.
-    cl_tt_noise :
-        :math:`N_\ell^{TT}` for ``sigma2_muT_hat_full`` (scalar or per-:math:`\ell`).
-    dsigma2_wrt :
-        Maps parameter name to :math:`\partial\sigma_\ell^2/\partial\theta` (length ``len(ell)``).
-    """
+    w_mu_inv = W_MU_INV_PIXIE,
+    dns_step = 5e-5,
+    dkdf_step = 0.5,
+    sigma_ns_prior = 0.004,
+    sigma_As_prior = None,
+    sigma_k_Df_prior = None,
+    include_As = None,
+    include_k_Df = False,
+    As_fid = AS_FID_LEGACY,
+    use_b_analytic = False,
+    b_override = None,
+    b_integral_kw = None,
+    variance_at_fiducial = True,
+    cl_tt_txt_dir = None,
+    variance_mode = VARIANCE_PZ_INSTRUMENTAL_APPROX,
+    cl_tt_noise = 0.0,
+    include_covariance_derivative = False,
+    dsigma2_wrt = None,
+    b_db_prec = None,
+):
+    r"""Compute the generalized Gaussian Fisher matrix for the muT band-power model."""
     if not variance_at_fiducial and not include_covariance_derivative:
         warnings.warn(
             "variance_at_fiducial=False without include_covariance_derivative: still using "
@@ -445,10 +379,10 @@ def fisher_muT_general(
             stacklevel=2,
         )
 
-    def _sigma_u(j: int) -> float:
+    def _sigma_u(j):
         return 1.0 / np.sqrt(F_data[j, j]) if F_data[j, j] > 0 else np.inf
 
-    def _sigma_m(j: int) -> float:
+    def _sigma_m(j):
         v = float(cov[j, j])
         if not math.isfinite(v) or v <= 0.0:
             return float("inf")
@@ -498,31 +432,24 @@ def fisher_muT_general(
 
 
 def fisher_1d_fnl_only(
-    ell: np.ndarray,
+    ell,
     fwhm_deg,
     ns_fid,
     k_D_i,
     k_D_f,
     k_p,
     *,
-    w_mu_inv: float = W_MU_INV_PIXIE,
-    As_fid: float = AS_FID_LEGACY,
-    use_b_analytic: bool = True,
-    b_integral_kw: dict[str, Any] | None = None,
-    b_override: float | None = None,
-    cl_tt_txt_dir: str | None = None,
-    variance_mode: str = VARIANCE_PZ_INSTRUMENTAL_APPROX,
-    fnl_fid_for_variance: float = 0.0,
-    cl_tt_noise: np.ndarray | float = 0.0,
-) -> float:
-    """Single-parameter Fisher F = sum_ell (dC/df_NL)^2/sigma_ell^2.
-
-    ``fnl_fid_for_variance`` sets :math:`C_\ell^{\mu T}` inside :math:`\sigma_\ell^2` when using
-    ``full_gaussian_*`` modes (ignored for ``pz_instrumental_approx`` in practice).
-
-    If ``b_override`` is set (e.g. ``1.0`` for a simplified tutorial comparison), use constant
-    `b` at every multipole and ignore ``use_b_analytic`` / numerical ``b_ell_ns``.
-    """
+    w_mu_inv = W_MU_INV_PIXIE,
+    As_fid = AS_FID_LEGACY,
+    use_b_analytic = True,
+    b_integral_kw = None,
+    b_override = None,
+    cl_tt_txt_dir = None,
+    variance_mode = VARIANCE_PZ_INSTRUMENTAL_APPROX,
+    fnl_fid_for_variance = 0.0,
+    cl_tt_noise = 0.0,
+):
+    """Compute the single-parameter Fisher information for f_NL under the selected variance model."""
     b_kw = dict(b_integral_kw or {})
     if cl_tt_txt_dir is not None:
         _bundle = load_ClTT_planck18(cl_tt_txt_dir)
@@ -559,7 +486,7 @@ def fisher_1d_fnl_only(
     return float(np.sum(K_fnl**2 / var))
 
 
-def default_ell_grid(fwhm_deg, ell_min: int = 2) -> np.ndarray:
+def default_ell_grid(fwhm_deg, ell_min = 2):
     lmax = ell_max_from_fwhm_deg(fwhm_deg)
     return np.arange(ell_min, int(np.ceil(lmax)) + 1, dtype=float)
 

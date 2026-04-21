@@ -276,13 +276,8 @@ params = {'_internal.classic_mode': False,
           'ytick.right': True}
 
 
-def apply_plot_params() -> None:
-    """
-    Apply project plotting rcParams.
-
-    Uses only keys recognized by the installed matplotlib and avoids backend/runtime keys
-    that can interfere with script execution.
-    """
+def apply_plot_params():
+    """Apply project rcParams using only safe keys supported by the local matplotlib."""
     blocked = {
         "backend",
         "backend_fallback",

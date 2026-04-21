@@ -1,10 +1,4 @@
-"""
-muT Fisher forecast: 1D (f_NL) and 2D (f_NL, n_s) with Planck prior on n_s.
-
-Fiducial f_NL values:
-0, 1, 5 (Planck 2018 local-type |f_NL| ~ few), 12_500, 25_000
-(default reference f_NL = 1 so dC/dn_s != 0 when using numerical b)
-"""
+'muT Fisher forecast: 1D (f_NL) and 2D (f_NL, n_s) with Planck prior on n_s.'
 
 from __future__ import annotations
 import numpy as np
@@ -27,7 +21,7 @@ except ImportError:
     )
 
 
-def main() -> None:
+def main():
     # --- same baseline as 1D fisher ---
     fwhm_deg = 1.6 #lmax=84
     # mu autospectrum noise w_mu^{-1} in C_l^{mu mu,N} (beam.N_mu_mu); PIXIE vs SPECTER

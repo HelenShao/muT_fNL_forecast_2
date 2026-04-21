@@ -1,57 +1,4 @@
-r"""
-3-parameter Fisher forecast: (f_NL, n_s, A_s) with Planck-style priors on n_s and A_s,
-plus pairwise marginal \Delta\chi^2 contours (Gaussian Fisher approximation).
-
-Run from this directory:
-    python3 main_3d.py
-
-Default mu-noise uses ``W_MU_INV_SPECTER`` (``(2e-9)**2`` in ``beam.py``). Pass ``--pixie`` for PIXIE.
-
-Table only (no matplotlib window):
-    python3 main_3d.py --no-plot
-
-To save printed output:
-    python3 main_3d.py > forecast_3d.txt
-
-``--save-forecasts`` writes text tables under ``cmbs4/results/forecast_tables/`` by default.
-``--fnl-ns-contours`` writes ``fnl_ns_*.pdf`` into ``cmbs4/results/`` (same tree as ``main.tex``).
-
-Contour figure is saved under ``cmbs4/results/main_3d_contours.pdf`` (override with ``--output``). Use
-``--no-show`` to save without opening a GUI (e.g. batch runs).
-
-If ``cl_tt_fiducial.txt`` (and bracket files) from ``planck_cosmology.py`` sit next to this script,
-the Fisher run uses those CAMB ``C_l^{TT}`` for the noise variance and Planck ``A_s`` for the
-``\\mu T`` template; a short summary of numerical ``d C_l^{TT}/d n_s`` and ``d C_l^{TT}/d A_s`` is printed.
-Use ``--no-camb-cltt`` for the legacy analytic ``C_l^{TT}``, or ``--cl-tt-txt-dir DIR`` to point elsewhere.
-
-Why ``main_3d.py`` can print a much larger ``\\sigma(f_{\\mathrm{NL}})`` than ``fisher_ns.py`` even though
-both use SPECTER by default:
-
-- The Fisher code estimates the uncertainty on the measured ``\\mu T`` band powers using a variance per
-  multipole that is proportional to ``C_\\ell^{TT}`` times the deconvolved mu-noise term
-  ``C_\\ell^{\\mu\\mu,N}`` (see ``spectra.sigma2_muT_hat``). So **both** the temperature spectrum and the
-  mu experiment noise enter.
-
-- ``fisher_ns.py`` uses the **analytic** Sachs--Wolfe-style ``C_l^{TT}`` from this package. That template
-  is relatively small in the units used here, so the variance is modest and ``\\sigma(f_{\\mathrm{NL}})`` can
-  be of order hundreds.
-
-- When CAMB ``cl_tt_fiducial.txt`` is present, this script uses that **full** ``C_\\ell^{TT}`` (unlensed or
-  lensed, depending on how ``planck_cosmology.py`` was run). That is **not** the same object as
-  ``spectra.Cl_TT``: the analytic path is a large-angle Sachs--Wolfe scaling ``\\propto A_s/(\\ell(\\ell+1))``
-  only, whereas CAMB includes transfers, ISW, and acoustic structure, so at moderate ``\\ell`` the CAMB
-  curve can exceed the SW template by **orders of magnitude**. Swapping lensed for unlensed removes
-  smoothing from lensing but **does not** collapse CAMB onto ``Cl_TT``; ``\\sigma(f_{\\mathrm{NL}})`` can
-  therefore stay near the CAMB-text-file value until you use ``--no-camb-cltt``.
-
-- Switching to PIXIE (``--pixie``) makes ``C_\\ell^{\\mu\\mu,N}`` larger and **further** worsens
-  ``\\sigma(f_{\\mathrm{NL}})`` with the same ``C_l^{TT}``. So SPECTER vs PIXIE still matters; the confusing
-  part is mainly **which** ``C_l^{TT}`` you pair with it.
-
-- To compare directly with ``fisher_ns.py`` SPECTER numbers, run ``main_3d.py --no-camb-cltt`` so both
-  use analytic ``C_l^{TT}`` (and accept any remaining differences from the extra ``A_s`` parameter and priors
-  in the 3D case).
-"""
+'3-parameter Fisher forecast: (f_NL, n_s, A_s) with Planck-style priors on n_s and A_s.'
 
 from __future__ import annotations
 
@@ -100,25 +47,22 @@ FNl_FID_FOR_PLOTS = 25_000.0
 I_FNL, I_NS, I_AS = 0, 1, 2
 
 
-def _default_cl_tt_txt_dir() -> str:
+def _default_cl_tt_txt_dir():
     return os.path.dirname(os.path.abspath(__file__))
 
 
-def _cl_tt_camb_files_ready(cl_tt_txt_dir: str) -> bool:
+def _cl_tt_camb_files_ready(cl_tt_txt_dir):
     return os.path.isfile(os.path.join(cl_tt_txt_dir, CL_TT_TXT_FIDUCIAL))
 
 
 def report_camb_cl_tt_numerical_derivatives(
-    ell: np.ndarray,
+    ell,
     *,
-    ns_fid: float,
-    as_fid_planck: float,
-    cl_tt_txt_dir: str,
-) -> None:
-    """
-    Load fiducial and bracket ``C_l^{TT}`` from text files and report central finite-difference
-    ``d C_l^{TT}/d n_s`` and ``d C_l^{TT}/d A_s`` on the multipoles in ``ell``.
-    """
+    ns_fid,
+    as_fid_planck,
+    cl_tt_txt_dir,
+):
+    """Report finite-difference CAMB Cl_TT derivatives on the selected multipole grid."""
     bundle = load_ClTT_planck18(cl_tt_txt_dir)
     ns_hi, ns_lo = ns_brackets_absolute(ns_fid)
     as_hi, as_lo = As_brackets_relative(as_fid_planck)
@@ -149,15 +93,12 @@ def report_camb_cl_tt_numerical_derivatives(
 
 
 def report_camb_vs_analytic_cl_tt_average_difference(
-    ell: np.ndarray,
+    ell,
     *,
-    as_fid: float,
-    cl_tt_txt_dir: str,
-) -> None:
-    """
-    Compare CAMB fiducial ``C_l^{TT}`` to analytic ``spectra.Cl_TT`` on ``ell`` and print
-    average differences in the model's working ``C_l^{TT}`` units.
-    """
+    as_fid,
+    cl_tt_txt_dir,
+):
+    """Report average differences between CAMB and analytic Cl_TT on the selected grid."""
     bundle = load_ClTT_planck18(cl_tt_txt_dir)
     cl_tt_camb = cl_tt_on_ell_grid(bundle["fiducial"], ell)
     cl_tt_analytic = Cl_TT(ell, A_s=as_fid)
@@ -180,7 +121,7 @@ def report_camb_vs_analytic_cl_tt_average_difference(
     print()
 
 
-def marginal_corr(cov: np.ndarray, i: int, j: int) -> float:
+def marginal_corr(cov, i, j):
     """Pearson correlation from covariance block, matching ``corr_fnl_ns`` for (0, 1)."""
     if cov[i, i] <= 0 or cov[j, j] <= 0:
         return 0.0
@@ -188,20 +129,15 @@ def marginal_corr(cov: np.ndarray, i: int, j: int) -> float:
 
 
 def marginal_delta_chi2_2d(
-    cov_full: np.ndarray,
-    i: int,
-    j: int,
-    x: np.ndarray,
-    y: np.ndarray,
-    x0: float,
-    y0: float,
-) -> np.ndarray:
-    r"""
-    \Delta\chi^2 for marginalized 2D Gaussian of parameters (i, j), offset from (x0, y0).
-
-    Uses the 2x2 block of the full covariance (inverse Fisher); equivalent to
-    integrating the third parameter out of the Gaussian posterior.
-    """
+    cov_full,
+    i,
+    j,
+    x,
+    y,
+    x0,
+    y0,
+):
+    r"""Compute marginalized 2D delta-chi-squared for a selected parameter pair."""
     block = cov_full[np.ix_([i, j], [i, j])]
     prec = np.linalg.inv(block)
     X, Y = np.meshgrid(x, y, indexing="xy")
@@ -215,16 +151,16 @@ def marginal_delta_chi2_2d(
 
 
 def plot_pairwise_marginal_contours(
-    r: FisherMuTResult,
+    r,
     *,
-    fnl_fid: float,
-    ns_fid: float,
-    as_fid: float,
-    n_grid: int = 200,
-    sigma_extent: float = 3.0,
-    outfile: Path | None = None,
-    show: bool = True,
-) -> None:
+    fnl_fid,
+    ns_fid,
+    as_fid,
+    n_grid = 200,
+    sigma_extent = 3.0,
+    outfile = None,
+    show = True,
+):
     import matplotlib.pyplot as plt
 
     cov = r.cov_marginal # later take 2x2 blocks for each pair of params to marginalize over the third param
@@ -273,13 +209,13 @@ def plot_pairwise_marginal_contours(
 
 
 def _grid_for_fnl_ns(
-    cov_full: np.ndarray,
-    fnl_fid: float,
-    ns_fid: float,
+    cov_full,
+    fnl_fid,
+    ns_fid,
     *,
-    n_grid: int = 200,
-    sigma_extent: float = 3.0,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    n_grid = 200,
+    sigma_extent = 3.0,
+):
     """Helper: grid and Δχ² for marginalized (f_NL, n_s) only."""
     sig = np.sqrt(np.diag(cov_full))
     i, j = I_FNL, I_NS
@@ -293,16 +229,16 @@ def _grid_for_fnl_ns(
 
 
 def plot_fnl_ns_single(
-    r: FisherMuTResult,
+    r,
     *,
-    fnl_fid: float,
-    ns_fid: float,
-    color: str = "#3193A2",
-    outfile: Path | None = None,
-    show: bool = True,
-    n_grid: int = 200,
-    sigma_extent: float = 3.0,
-) -> None:
+    fnl_fid,
+    ns_fid,
+    color = "#3193A2",
+    outfile = None,
+    show = True,
+    n_grid = 200,
+    sigma_extent = 3.0,
+):
     """2D marginalized (f_NL, n_s) contours in a single color."""
     import matplotlib.pyplot as plt
 
@@ -347,24 +283,24 @@ def plot_fnl_ns_single(
 
 
 def plot_fnl_ns_pixie_vs_specter(
-    ell: np.ndarray,
-    fwhm_deg: float,
-    fnl_fid: float,
-    ns_fid: float,
-    k_D_i: float,
-    k_D_f: float,
-    k_p: float,
+    ell,
+    fwhm_deg,
+    fnl_fid,
+    ns_fid,
+    k_D_i,
+    k_D_f,
+    k_p,
     *,
-    sigma_ns_prior: float,
-    sigma_As_prior: float | None,
-    as_fid: float,
-    cl_tt_txt_dir: str | None,
-    b_override: float | None,
-    outfile: Path,
-    n_grid: int = 200,
-    sigma_extent: float = 3.0,
-    show: bool = True,
-) -> None:
+    sigma_ns_prior,
+    sigma_As_prior,
+    as_fid,
+    cl_tt_txt_dir,
+    b_override,
+    outfile,
+    n_grid = 200,
+    sigma_extent = 3.0,
+    show = True,
+):
     """Overlay PIXIE and SPECTER marginalized (f_NL, n_s) contours on one plot."""
     import matplotlib.pyplot as plt
     from beam import W_MU_INV_PIXIE, W_MU_INV_SPECTER
@@ -473,22 +409,22 @@ def plot_fnl_ns_pixie_vs_specter(
         plt.close(fig)
 
 def print_forecast_table(
-    ell: np.ndarray,
-    fwhm_deg: float,
-    ns_fid: float,
-    k_D_i: float,
-    k_D_f: float,
-    k_p: float,
-    sigma_ns_planck: float,
-    sigma_as_planck: float,
-    fnl_fiducials: tuple[float, ...],
+    ell,
+    fwhm_deg,
+    ns_fid,
+    k_D_i,
+    k_D_f,
+    k_p,
+    sigma_ns_planck,
+    sigma_as_planck,
+    fnl_fiducials,
     *,
-    cl_tt_txt_dir: str | None = None,
-    as_fid: float = AS_FID_LEGACY,
-    w_mu_inv: float = W_MU_INV_SPECTER,
-    mu_noise_label: str = "SPECTER",
-    b_override: float | None = None,
-) -> None:
+    cl_tt_txt_dir = None,
+    as_fid = AS_FID_LEGACY,
+    w_mu_inv = W_MU_INV_SPECTER,
+    mu_noise_label = "SPECTER",
+    b_override = None,
+):
     print("muT Fisher forecast -- 3 parameters (f_NL, n_s, A_s)")
     print(f"  l range: {int(ell[0])}...{int(ell[-1])}, FWHM = {fwhm_deg}^\\circ, n_s = {ns_fid}")
     print(f"  mu autospectrum noise: w_mu^-1 = {w_mu_inv:.6e} ({mu_noise_label}; see beam.N_mu_mu)")
@@ -541,23 +477,23 @@ def print_forecast_table(
 
 
 def write_forecast_table_to_txt(
-    path: Path,
-    ell: np.ndarray,
-    fwhm_deg: float,
-    ns_fid: float,
-    k_D_i: float,
-    k_D_f: float,
-    k_p: float,
-    sigma_ns_planck: float,
-    sigma_as_planck: float,
-    fnl_fiducials: tuple[float, ...],
+    path,
+    ell,
+    fwhm_deg,
+    ns_fid,
+    k_D_i,
+    k_D_f,
+    k_p,
+    sigma_ns_planck,
+    sigma_as_planck,
+    fnl_fiducials,
     *,
-    cl_tt_txt_dir: str | None,
-    as_fid: float,
-    w_mu_inv: float,
-    mu_noise_label: str,
-    b_override: float | None,
-) -> Path:
+    cl_tt_txt_dir,
+    as_fid,
+    w_mu_inv,
+    mu_noise_label,
+    b_override,
+):
     path = path.resolve()
     path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -616,19 +552,19 @@ def write_forecast_table_to_txt(
 
 
 def print_forecast_1d(
-    ell: np.ndarray,
-    fwhm_deg: float,
-    ns_fid: float,
-    k_D_i: float,
-    k_D_f: float,
-    k_p: float,
+    ell,
+    fwhm_deg,
+    ns_fid,
+    k_D_i,
+    k_D_f,
+    k_p,
     *,
-    cl_tt_txt_dir: str | None = None,
-    as_fid: float = AS_FID_LEGACY,
-    w_mu_inv: float = W_MU_INV_SPECTER,
-    mu_noise_label: str = "SPECTER",
-    b_override: float | None = None,
-) -> None:
+    cl_tt_txt_dir = None,
+    as_fid = AS_FID_LEGACY,
+    w_mu_inv = W_MU_INV_SPECTER,
+    mu_noise_label = "SPECTER",
+    b_override = None,
+):
     f_1d = fisher_1d_fnl_only(
         ell,
         fwhm_deg,
@@ -662,7 +598,7 @@ def print_forecast_1d(
     print()
 
 
-def main(argv: list[str] | None = None) -> None:
+def main(argv = None):
     apply_plot_params()
     p = argparse.ArgumentParser(description="3D muT Fisher table and pairwise marginal contours.")
     p.add_argument(

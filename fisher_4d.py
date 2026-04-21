@@ -1,14 +1,4 @@
-r"""
-4-parameter muT Fisher forecast: (f_{\mathrm{NL}}, n_s, A_s, k_{D,f}) with Planck-style priors
-on n_s and A_s, and k_{D,f} included as a nuisance (Tier A; numerical b(\ell,n_s) and
-finite-difference \partial b/\partial k_{D,f} unless you switch to analytic b).
-
-Run from this directory:
-    python3 fisher_4d.py
-
-Default output file (override with ``--output``):
-    cmbs4/results/forecast_tables/SPECTER_fNL_4d_forecasts.txt
-"""
+'4-parameter muT Fisher forecast: (f_{\\mathrm{NL}}, n_s, A_s, k_{D,f}) with Planck-style priors.'
 
 from __future__ import annotations
 
@@ -40,7 +30,7 @@ except ImportError:
     from output_paths import ensure_dir, forecast_tables_dir
 
 
-def marginal_corr(cov: np.ndarray, i: int, j: int) -> float:
+def marginal_corr(cov, i, j):
     if cov[i, i] <= 0 or cov[j, j] <= 0:
         return 0.0
     return float(cov[i, j] / np.sqrt(cov[i, i] * cov[j, j]))
@@ -48,17 +38,17 @@ def marginal_corr(cov: np.ndarray, i: int, j: int) -> float:
 
 def run_forecast(
     *,
-    outfile: Path,
-    fwhm_deg: float,
-    w_mu_inv: float,
-    dns_step: float,
-    dkdf_step: float,
-    sigma_ns_planck: float,
-    sigma_as_planck: float,
-    sigma_k_Df_prior: float | None,
-    use_b_analytic: bool,
-    fnl_fiducials: tuple[float, ...],
-) -> None:
+    outfile,
+    fwhm_deg,
+    w_mu_inv,
+    dns_step,
+    dkdf_step,
+    sigma_ns_planck,
+    sigma_as_planck,
+    sigma_k_Df_prior,
+    use_b_analytic,
+    fnl_fiducials,
+):
     ns_fid = 0.965
     k_p = 0.002
     k_D_i = 1.1e4
@@ -67,7 +57,7 @@ def run_forecast(
     ell = default_ell_grid(fwhm_deg)
     lines: list[str] = []
 
-    def emit(s: str = "") -> None:
+    def emit(s = ""):
         print(s)
         lines.append(s)
 
@@ -171,7 +161,7 @@ def run_forecast(
     print(f"Wrote: {outfile}", file=sys.stderr)
 
 
-def main(argv: list[str] | None = None) -> None:
+def main(argv = None):
     p = argparse.ArgumentParser(
         description="4D muT Fisher (f_NL, n_s, A_s, k_D,f) with SPECTER noise; save table to file."
     )

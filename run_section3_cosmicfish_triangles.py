@@ -1,24 +1,4 @@
-r"""
-Section 3 — CosmicFish **triangle** plots: **PIXIE** and **SPECTER** 3D Fisher
-\((f_{\rm NL}, n_s, A_s)\) overlaid on the same figure (one PDF per \(f_{\rm NL}^{\rm fid}\)).
-
-Uses the same Fisher construction as ``cosmicfish_contours.build_muT_fisher`` (numerical \(b(\ell)\),
-Planck priors on \(n_s\) and \(A_s\), \(10^9 A_s\) axis scaling for CosmicFish).
-
-Colors: PIXIE ``#3193A2``, SPECTER ``#e76f51``.
-
-Outputs under ``cmbs4/results/muT_fNL_runs/section3_extension/analytic_cltt_analytic_b/figures/``::
-
-    cosmicfish_triangle_pixie_specter_fnl<tag>.pdf
-
-Run::
-
-    export COSMICFISH_PYTHON=/path/to/CosmicFish/python
-    python3 run_section3_cosmicfish_triangles.py
-
-    python3 run_section3_cosmicfish_triangles.py --fnl-fiducials 1,25000 \\
-        --cosmicfish-python /path/to/CosmicFish/python
-"""
+'Section 3 — CosmicFish **triangle** plots: **PIXIE** and **SPECTER** 3D Fisher.'
 
 from __future__ import annotations
 
@@ -61,21 +41,18 @@ SPECTER_COLOR = "#e76f51"
 AS_SCALE = 1e9
 
 
-def _fnl_file_tag(fnl: float) -> str:
+def _fnl_file_tag(fnl):
     if math.isfinite(fnl) and abs(fnl - round(fnl)) < 1e-9:
         return str(int(round(fnl)))
     return str(fnl).replace(".", "p")
 
 
-def _parse_fnl_csv(s: str) -> tuple[float, ...]:
+def _parse_fnl_csv(s):
     return tuple(float(x.strip()) for x in s.split(",") if x.strip())
 
 
-def _save_triangle_pdf(plotter, out: Path) -> None:
-    """
-    CosmicFish ``export`` is a thin ``plt.savefig`` wrapper; ``bbox_inches='tight'`` alone often
-    drops the **figure** legend. Include the legend in the bbox and add padding.
-    """
+def _save_triangle_pdf(plotter, out):
+    """Save a triangle PDF while preserving the figure legend bounding box."""
     fig = plotter.figure
     leg = getattr(plotter, "legend", None)
     kw: dict = {"bbox_inches": "tight", "pad_inches": 0.45}
@@ -84,7 +61,7 @@ def _save_triangle_pdf(plotter, out: Path) -> None:
     fig.savefig(str(out), **kw)
 
 
-def main(argv: list[str] | None = None) -> None:
+def main(argv = None):
     _script_dir = Path(__file__).resolve().parent
     if str(_script_dir) not in sys.path:
         sys.path.insert(0, str(_script_dir))

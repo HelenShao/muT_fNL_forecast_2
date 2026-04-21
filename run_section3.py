@@ -1,14 +1,4 @@
-r"""
-Section 3: 3D Fisher $(f_{\rm NL}, n_s, A_s)$ with Planck priors; $f_{\rm NL}^{\rm fid}$ grid;
-optional prior sweep on $\sigma(n_s)$.
-
-Writes:
-  - ``section3_extension/analytic_cltt_analytic_b/tables/forecast_3d_grid.txt``
-
-CosmicFish **triangle** plots (PIXIE vs SPECTER overlaid, one PDF per \(f_{\rm NL}^{\rm fid}\))::
-
-    python3 run_section3_cosmicfish_triangles.py --cosmicfish-python .../CosmicFish/python
-"""
+'Section 3: 3D Fisher $(f_{\\rm NL}, n_s, A_s)$ with Planck priors; $f_{\\rm NL}^{\\rm fid}$ grid.'
 
 from __future__ import annotations
 
@@ -32,7 +22,7 @@ SIGMA_NS_DEFAULT = 0.004
 PRIOR_SWEEP = (0.002, 0.004, 0.008, 0.016)
 
 
-def _run_grid(*, experiment: str) -> list[dict[str, float]]:
+def _run_grid(*, experiment):
     if experiment == "pixie":
         fwhm, w_inv = FWHM_PIXIE, W_MU_INV_PIXIE
     else:
@@ -67,7 +57,7 @@ def _run_grid(*, experiment: str) -> list[dict[str, float]]:
     return rows
 
 
-def _prior_sweep(*, experiment: str) -> list[str]:
+def _prior_sweep(*, experiment):
     fwhm, w_inv = (FWHM_PIXIE, W_MU_INV_PIXIE) if experiment == "pixie" else (FWHM_SPECTER, W_MU_INV_SPECTER)
     ell = default_ell_grid(fwhm)
     lines = ["sigma_ns_prior,sigma_fnl_marg,fnl_fid"]
@@ -91,7 +81,7 @@ def _prior_sweep(*, experiment: str) -> list[str]:
     return lines
 
 
-def _write_latex_table(rows_by_exp: dict[str, list[dict]]) -> None:
+def _write_latex_table(rows_by_exp):
     """Emit a short pointer under cmbs4/results; the merged 2D+3D table is maintained in main.tex."""
     out = paper_results_dir() / "section3_fnl_ns_as_table.tex"
     pix = {r["fnl_fid"]: r for r in rows_by_exp["pixie"]}
@@ -109,7 +99,7 @@ def _write_latex_table(rows_by_exp: dict[str, list[dict]]) -> None:
     out.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def main() -> None:
+def main():
     dirs = ensure_section_layout("section3_extension", "analytic_cltt_analytic_b")
     (dirs["logs"] / "config.json").write_text(
         json.dumps({"fnl_fiducials": FNL_FIDUCIALS, "sigma_ns": SIGMA_NS_DEFAULT}, indent=2),

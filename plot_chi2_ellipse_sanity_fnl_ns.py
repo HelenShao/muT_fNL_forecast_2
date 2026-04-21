@@ -1,16 +1,4 @@
-"""
-Sanity check: draw Δχ² = k curves for the 2D Gaussian
-
-    (δp)^T G (δp) = k,   δp = (f_NL - f_NL^fid, n_s - n_s^fid),
-
-using only ax.plot on a parametric ellipse (no meshgrid, no contour).
-
-Numbers for f_NL^fid = 1 from section3 CAMB 2D table:
-  .../cmbs4/results/muT_fNL_runs/section3_extension/camb_cltt_numerical_b/tables/forecast_2d_fnl_ns_grid.txt
-
-Run:
-  python3 plot_chi2_ellipse_sanity_fnl_ns.py
-"""
+'Sanity check: draw Δχ² = k curves for the 2D Gaussian.'
 from __future__ import annotations
 
 from pathlib import Path
@@ -35,7 +23,7 @@ ROWS = {
 DELTA_CHI2 = (2.30, 5.99)
 
 
-def marginal_cov_2d(sigma_fnl: float, sigma_ns: float, rho: float) -> np.ndarray:
+def marginal_cov_2d(sigma_fnl, sigma_ns, rho):
     c12 = rho * sigma_fnl * sigma_ns
     return np.array(
         [
@@ -47,17 +35,12 @@ def marginal_cov_2d(sigma_fnl: float, sigma_ns: float, rho: float) -> np.ndarray
 
 
 def ellipse_delta_chi2_from_G(
-    G: np.ndarray,
-    k: float,
+    G,
+    k,
     *,
-    n_points: int = 400,
-) -> tuple[np.ndarray, np.ndarray]:
-    """
-    Parametric closed curve for δp^T G δp = k (G = marginal precision).
-
-    Let G = V Λ V^T (eigh). With w = V^T δ, we have λ₁ w₁² + λ₂ w₂² = k,
-    hence w₁ = √(k/λ₁) cos t, w₂ = √(k/λ₂) sin t, and δ = V w.
-    """
+    n_points = 400,
+):
+    """Return a parametric ellipse for a fixed delta-chi-squared level."""
     lam, V = np.linalg.eigh(G)
     if np.any(lam <= 0):
         raise ValueError(f"G not positive definite: eigenvalues {lam}")
@@ -69,7 +52,7 @@ def ellipse_delta_chi2_from_G(
     return delta[0], delta[1]
 
 
-def main() -> None:
+def main():
     apply_plot_params()
     fig, ax = plt.subplots(figsize=(6.5, 5.5))
 

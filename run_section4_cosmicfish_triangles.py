@@ -1,30 +1,4 @@
-r"""
-Section 4 extension — CosmicFish **triangle** plots for the dust Fisher
-\((f_{\rm NL}, n_s, A_D, \alpha_D)\) from ``fisher_foreground.fisher_muT_fnl_ns_with_dust``.
-
-Produces up to **three** PDFs per run (user-selected modes):
-
-1. **SPECTER** only  
-2. **PIXIE** only  
-3. **PIXIE** + **SPECTER** overlay (SPECTER drawn on top; see patched ``fisher_plot.figure_2D``)
-
-``A_D`` is reparameterized to \(10^{12} A_D\) in the Fisher (same idea as \(10^9 A_s\) in section 3) so CosmicFish axes are readable.
-
-Filenames include **\(f_{\rm NL}^{\rm fid}\)** and **\(c_f\)**, e.g.  
-``cosmicfish_triangle_4d_section4_specter_fnl25000_cf1000.pdf``.
-
-Outputs under ``muT_fNL_runs/section4_foregrounds/{pipeline}/figures/``.
-
-Run::
-
-    export COSMICFISH_PYTHON=.../CosmicFish/python
-    python3 run_section4_cosmicfish_triangles.py --fnl-fid 25000 --cf 1000
-
-    python3 run_section4_cosmicfish_triangles.py --fnl-fid 1 --modes specter,pixie,overlay \\
-        --pipeline analytic_cltt_analytic_b
-
-    python3 run_section4_cosmicfish_triangles.py --section4-config path/to/logs/config.json --cf 1000
-"""
+'Section 4 extension — CosmicFish **triangle** plots for the dust Fisher.'
 
 from __future__ import annotations
 
@@ -82,23 +56,23 @@ SPECTER_COLOR = "#e76f51"
 AD_RESCALE = 1e12
 
 
-def _module_dir() -> Path:
+def _module_dir():
     return Path(__file__).resolve().parent
 
 
-def _fnl_file_tag(fnl: float) -> str:
+def _fnl_file_tag(fnl):
     if math.isfinite(fnl) and abs(fnl - round(fnl)) < 1e-9:
         return str(int(round(fnl)))
     return str(fnl).replace(".", "p")
 
 
-def _cf_file_tag(c_f: float) -> str:
+def _cf_file_tag(c_f):
     if math.isfinite(c_f) and abs(c_f - round(c_f)) < 1e-6:
         return str(int(round(c_f)))
     return str(c_f).replace(".", "p")
 
 
-def _fnl_fiducials_from_args(args: argparse.Namespace) -> list[float]:
+def _fnl_fiducials_from_args(args):
     if getattr(args, "section4_config", None) is not None:
         p = Path(args.section4_config).expanduser().resolve()
         data = json.loads(p.read_text(encoding="utf-8"))
@@ -116,7 +90,7 @@ def _fnl_fiducials_from_args(args: argparse.Namespace) -> list[float]:
     raise SystemExit("Provide --fnl-fid, --fnl-fiducials, or --section4-config")
 
 
-def _save_triangle_pdf(plotter, out: Path) -> None:
+def _save_triangle_pdf(plotter, out):
     fig = plotter.figure
     leg = getattr(plotter, "legend", None)
     kw: dict = {"bbox_inches": "tight", "pad_inches": 0.45}
@@ -127,10 +101,10 @@ def _save_triangle_pdf(plotter, out: Path) -> None:
 
 def _foreground_result(
     *,
-    experiment: str,
-    fnl_fid: float,
-    c_f: float,
-    pipeline: str,
+    experiment,
+    fnl_fid,
+    c_f,
+    pipeline,
 ):
     fwhm = FWHM_PIXIE if experiment == "pixie" else FWHM_SPECTER
     w_inv = W_MU_INV_PIXIE if experiment == "pixie" else W_MU_INV_SPECTER
@@ -163,11 +137,11 @@ def _foreground_result(
 def _cosmicfish_fish(
     fm,
     *,
-    experiment: str,
-    fnl_fid: float,
-    c_f: float,
-    pipeline: str,
-    label: str,
+    experiment,
+    fnl_fid,
+    c_f,
+    pipeline,
+    label,
 ):
     r = _foreground_result(experiment=experiment, fnl_fid=fnl_fid, c_f=c_f, pipeline=pipeline)
     F = _symmetrize_fisher(r.F_total)
@@ -183,7 +157,7 @@ def _cosmicfish_fish(
     return make_cosmicfish_fisher_object(fm, F, list(names), list(fid), None, label)
 
 
-def main(argv: list[str] | None = None) -> None:
+def main(argv = None):
     _script_dir = Path(__file__).resolve().parent
     if str(_script_dir) not in sys.path:
         sys.path.insert(0, str(_script_dir))

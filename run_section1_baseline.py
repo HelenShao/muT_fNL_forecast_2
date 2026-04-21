@@ -1,14 +1,4 @@
-r"""
-Section 1 baseline (PZ reproduction): dual pipelines, CV + PIXIE + SPECTER, ``b_override`` 10/100.
-
-Writes ``tables/baseline_results.txt``, ``logs/config.json``, and ``section1_baseline_analysis.md``
-under each pipeline directory (see ``output_paths.ensure_section_layout``).
-
-Run from ``muT_fNL_forecast_2``::
-
-    python3 run_section1_baseline.py
-    python3 run_section1_baseline.py > logs/run.txt 2>&1
-"""
+'Section 1 baseline (PZ reproduction): dual pipelines, CV + PIXIE + SPECTER, ``b_override`` 10/100.'
 
 from __future__ import annotations
 
@@ -44,7 +34,7 @@ K_P = 0.002
 SCRIPT_DIR = Path(__file__).resolve().parent
 
 
-def _ell_for(fwhm_deg: float, lmax_cap: int | None = None) -> np.ndarray:
+def _ell_for(fwhm_deg, lmax_cap = None):
     ell = default_ell_grid(fwhm_deg)
     if lmax_cap is not None and ell.size:
         ell = ell[ell <= lmax_cap]
@@ -53,13 +43,13 @@ def _ell_for(fwhm_deg: float, lmax_cap: int | None = None) -> np.ndarray:
 
 def _run_1d_cases(
     *,
-    pipeline_name: str,
-    use_camb_cltt: bool,
-    use_numerical_b: bool,
-    cl_tt_txt_dir: str | None,
-    lines: list[str],
-) -> None:
-    def emit(msg: str) -> None:
+    pipeline_name,
+    use_camb_cltt,
+    use_numerical_b,
+    cl_tt_txt_dir,
+    lines,
+):
+    def emit(msg):
         print(msg)
         lines.append(msg)
 
@@ -128,7 +118,7 @@ def _run_1d_cases(
             emit(f"  [{exp}] 1e_b_override={b_ov:g} sigma(fNL)_1d = {s_b:.6e}  F={f_b:.6e}")
 
 
-def main() -> None:
+def main():
     camb_dir = str(SCRIPT_DIR)
     has_camb = (SCRIPT_DIR / "cl_tt_fiducial.txt").is_file()
 

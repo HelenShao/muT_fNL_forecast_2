@@ -1,14 +1,4 @@
-r"""
-§4.c.v — Ratio \(\sigma(f_{\rm NL})_{\rm marg\,dust} / \sigma(f_{\rm NL})_{\rm fixed\,dust}\)
-vs \(\ell_{\max}\). When this ratio approaches unity, marginalizing over \((A_D,\alpha_D)\)
-no longer materially degrades \(f_{\rm NL}\) at that scale.
-
-Run::
-
-    python3 plot_section4_lmax_marg_fixed_ratio.py --fnl-fid 25000 --cf 1000
-
-    python3 plot_section4_lmax_marg_fixed_ratio.py --section4-config .../logs/config.json
-"""
+'§4.c.v — Ratio \\(\\sigma(f_{\\rm NL})_{\\rm marg\\,dust} / \\sigma(f_{\\rm NL})_{\\rm fixed\\,dust}\\).'
 
 from __future__ import annotations
 
@@ -36,19 +26,19 @@ FWHM_SPECTER = 1.0
 LMAX_MAX = 1000
 
 
-def _fnl_file_tag(fnl: float) -> str:
+def _fnl_file_tag(fnl):
     if math.isfinite(fnl) and abs(fnl - round(fnl)) < 1e-9:
         return str(int(round(fnl)))
     return str(fnl).replace(".", "p")
 
 
-def _lmax_grid(n: int, lmax_cap: int) -> list[int]:
+def _lmax_grid(n, lmax_cap):
     cap = min(int(lmax_cap), LMAX_MAX)
     pts = np.unique(np.round(np.linspace(2, cap, n)).astype(int))
     return [int(x) for x in pts if x >= 2]
 
 
-def _fnl_list(args: argparse.Namespace) -> list[float]:
+def _fnl_list(args):
     if args.section4_config is not None:
         p = Path(args.section4_config).expanduser().resolve()
         data = json.loads(p.read_text(encoding="utf-8"))
@@ -60,13 +50,13 @@ def _fnl_list(args: argparse.Namespace) -> list[float]:
 
 def run_one(
     *,
-    fnl_fid: float,
-    c_f: float,
-    experiment: str,
-    n_lmax: int,
-    lmax_cap: int,
-    pipeline: str,
-) -> None:
+    fnl_fid,
+    c_f,
+    experiment,
+    n_lmax,
+    lmax_cap,
+    pipeline,
+):
     tag = _fnl_file_tag(float(fnl_fid))
     cf_tag = str(int(c_f)) if abs(c_f - round(c_f)) < 1e-6 else str(c_f).replace(".", "p")
     fwhm, w_inv = (FWHM_PIXIE, W_MU_INV_PIXIE) if experiment == "pixie" else (FWHM_SPECTER, W_MU_INV_SPECTER)
@@ -173,7 +163,7 @@ def run_one(
     print(out.resolve())
 
 
-def main() -> None:
+def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--fnl-fid", type=float, default=25000.0)
     ap.add_argument("--fnl-fiducials", type=str, default=None)

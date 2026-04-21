@@ -1,35 +1,4 @@
-r"""
-Section 2 (Cabass-style): \(\sigma(f_{\rm NL})\) vs \(\ell_{\max}\) up to 1000.
-
-Modes in the CSV:
-  - **instrumental**: 1D Fisher (PZ instrumental variance, \(\mu\) noise on).
-  - **marg_ns**: 2D \((f_{\rm NL}, n_s)\) + Planck-like prior on \(n_s\); reports unmarginalized
-    and marginalized \(\sigma(f_{\rm NL})\). At large \(\ell_{\max}\) the two curves **merge** when
-    bias marginalization no longer degrades \(f_{\rm NL}\) much (Cabass; often explored at
-    \(f_{\rm NL}^{\rm fid}=1\)).
-
-**Fiducials (defaults):** \(n_s=0.965\); \(b(\ell)\) from the **analytic** PZ template
-``b_analytic(n_s, k_{D,i}, k_{D,f}, k_p)`` (order-unity transfer, independent of \(\ell\) at fixed
-cosmology). Not a free bias parameter here — Cabass marginalization is over \(n_s\) (and their
-bias mode differs; we match the \(n_s\)-marginalization story in PZ \(\mu T\) Fisher).
-
-Writes CSV and **one figure per** \(f_{\rm NL}^{\rm fid}\) (default **PNG**: ``sigma_fnl_vs_lmax_fnl<tag>.png``).
-With ``--cv``, also writes cosmic-variance Fisher figures
-(``sigma_fnl_vs_lmax_cv_fnl<tag>.png``): full Gaussian \(\sigma_\ell^2\) with
-\(N_\ell^{\mu\mu}=0\), \(N_\ell^{TT}=0\), and a **2D** Fisher with **numerical**
-\(b(\ell)\) and **numerical** \(\partial b/\partial n_s\) (``db_dns_central``), **no**
-Gaussian prior on \(n_s\). Two curves: unmarginalized vs marginalized \(\sigma(f_{\rm NL})\)
-over that nuisance (bias) direction; **no** third 1D curve.
-
-Outputs go under
-``cmbs4/results/muT_fNL_runs/section2_cabass_{pixie|specter}/analytic_cltt_analytic_b/``.
-
-Run::
-
-    python3 sigma_fnl_vs_lmax.py --experiment pixie
-    python3 sigma_fnl_vs_lmax.py --experiment specter --fnl-fiducials 1,10,1000,15000,25000
-    python3 sigma_fnl_vs_lmax.py --experiment pixie --cv
-"""
+'Section 2 (Cabass-style): \\(\\sigma(f_{\\rm NL})\\) vs \\(\\ell_{\\max}\\) up to 1000.'
 
 from __future__ import annotations
 
@@ -69,22 +38,22 @@ LMAX_MAX = 1000
 DEFAULT_FNL_FIDUCIALS = (1.0, 10.0, 1000.0, 15000.0, 25000.0)
 
 
-def _parse_fnl_csv(s: str) -> tuple[float, ...]:
+def _parse_fnl_csv(s):
     return tuple(float(x.strip()) for x in s.split(",") if x.strip())
 
 
-def _lmax_grid() -> list[int]:
+def _lmax_grid():
     pts = np.unique(np.round(np.linspace(2, LMAX_MAX, 120)).astype(int))
     return [int(x) for x in pts if x >= 2]
 
 
-def _fnl_file_tag(fnl: float) -> str:
+def _fnl_file_tag(fnl):
     if math.isfinite(fnl) and abs(fnl - round(fnl)) < 1e-9:
         return str(int(round(fnl)))
     return str(fnl).replace(".", "p")
 
 
-def _crossing_lmax(series: list[tuple[int, float, float]]) -> int | None:
+def _crossing_lmax(series):
     for i in range(1, len(series)):
         l0, u0, m0 = series[i - 1]
         l1, u1, m1 = series[i]
@@ -93,7 +62,7 @@ def _crossing_lmax(series: list[tuple[int, float, float]]) -> int | None:
     return None
 
 
-def main() -> None:
+def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--experiment", choices=("pixie", "specter"), default="pixie")
     ap.add_argument(

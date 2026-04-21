@@ -18,20 +18,20 @@ SIGMA_AS_PLANCK2018 = AS_FID_PLANCK2018 * 0.014
 PZ_MUT_PREFACTOR = 6.1 * np.pi * (9.0 / 25.0)
 
 
-def Cl_TT(ell: np.ndarray, A_s: float | None = None) -> np.ndarray:
+def Cl_TT(ell, A_s = None):
     r"""C_l^{TT} = (2\pi/25) A_s/(l(l+1)); None -> AS_FID_LEGACY matches legacy 6e-10 scaling."""
     if A_s is None:
         A_s = AS_FID_LEGACY
     return K_TT_SW * A_s / (ell * (ell + 1.0))
 
 
-def T_muT_ell(ell: np.ndarray, A_s: float, k_D_i: float, k_D_f: float) -> np.ndarray:
+def T_muT_ell(ell, A_s, k_D_i, k_D_f):
     r"""PZ eq. (186): T_l = 6.1\pi (9/25) ln(k_D,i/k_D,f) A_s^2 / (l(l+1))."""
     L = np.log(k_D_i / k_D_f)
     return PZ_MUT_PREFACTOR * L * (A_s**2) / (ell * (ell + 1.0))
 
 
-def sigma2_muT_hat(ell: np.ndarray, cl_tt: np.ndarray, n_mumu: np.ndarray) -> np.ndarray:
+def sigma2_muT_hat(ell, cl_tt, n_mumu):
     r"""PZ approx: \mathrm{Var}(\hat{C}_l^{\mu T}) \simeq C_l^{TT} C_l^{\mu\mu,N} / (2l+1)"""
     return (cl_tt * n_mumu) / (2.0 * ell + 1.0)
 
@@ -39,17 +39,13 @@ def sigma2_muT_hat(ell: np.ndarray, cl_tt: np.ndarray, n_mumu: np.ndarray) -> np
 # ------------------------------------------------------------
 # Noise model (deconvolved mu noise)
 
-def ell_max_from_fwhm_deg(fwhm_deg: float) -> float:
+def ell_max_from_fwhm_deg(fwhm_deg):
     """Gaussian beam: l_max = sqrt(8 ln 2) / FWHM (radians)."""
     return float(np.sqrt(8.0 * np.log(2.0)) / np.deg2rad(fwhm_deg))
 
 
-def N_mu_mu(ell: np.ndarray, fwhm_deg: float, w_mu_inv: float = 1.3e-15) -> np.ndarray:
-    r"""
-    deconvolved mu autospectrum noise (dimensionless C_l units).
-    C_l^{\mu\mu,N} \simeq w_\mu^{-1} * exp(+l^2/l_max^2).
-    ** using PIXIE w_\mu^{-1/2} = 1.3e-15 **
-    """
+def N_mu_mu(ell, fwhm_deg, w_mu_inv = 1.3e-15):
+    r"""Return the deconvolved mu autospectrum noise on the input multipoles."""
     lmax = ell_max_from_fwhm_deg(fwhm_deg)
     return w_mu_inv * np.exp(ell**2 / lmax**2)
 
@@ -64,44 +60,37 @@ with I_+ from the k_+ Bessel integral and I_- from the k_- damping integrals.
 Tilt in I_- uses (k_-/(2 k_p))(ns-1).
 """
 
-def log_k_D_ratio(k_D_i: float, k_D_f: float) -> float:
+def log_k_D_ratio(k_D_i, k_D_f):
     return float(np.log(k_D_i / k_D_f))
 
 
-def b_analytic(ns: float, k_D_i: float, k_D_f: float, k_p: float) -> float:
+def b_analytic(ns, k_D_i, k_D_f, k_p):
     r"""Leading PZ approximation: b \simeq 1 + (n_s-1)/2 * ln(k_D,i k_D,f / (4 k_p^2))."""
     eps = ns - 1.0
     return 1.0 + 0.5 * eps * np.log((k_D_i * k_D_f) / (4.0 * k_p**2))
 
 
-def I_plus(ell: int, r_L_mpc: float, k_plus: np.ndarray) -> float:
-    r"""
-    numerically integrate
-    I_+ = \int dk_+ j_l^2(k_+ r_L) (measure from \int d ln k_+ k_+ j_l^2 -> \int dk_+ j_l^2)."""
+def I_plus(ell, r_L_mpc, k_plus):
+    r"""Compute the factorized plus integral for a given multipole."""
     jl = spherical_jn(ell, k_plus * r_L_mpc)
     return float(np.trapz(jl**2, k_plus))
 
 
 def I_minus(
-    eps: float,
-    k_p: float,
-    k_D_i: float,
-    k_D_f: float,
-    k_minus: np.ndarray,
-) -> float:
-    """
-    numerically integrate:
-    I_- = I_i - I_f 
-    I^(i) = int_0^infty dk_- (k_-/(2k_p))^(ns-1) exp(-k_-^2/(2 k_D,i^2)),
-    and similarly for k_D,f (PZ bracket form)
-    """
+    eps,
+    k_p,
+    k_D_i,
+    k_D_f,
+    k_minus,
+):
+    """Compute the factorized minus integral from the damping-window difference."""
     t = (k_minus / (2.0 * k_p)) ** eps
     I_i = np.trapz(t * np.exp(-(k_minus**2) / (2.0 * k_D_i**2)), k_minus)
     I_f = np.trapz(t * np.exp(-(k_minus**2) / (2.0 * k_D_f**2)), k_minus)
     return float(I_i - I_f)
 
 
-def F_b_factor(ell: int, ns: float, *, L: float, k_p: float, k_D_i: float, k_D_f: float, r_L_mpc: float, k_plus: np.ndarray, k_minus: np.ndarray) -> float:
+def F_b_factor(ell, ns, *, L, k_p, k_D_i, k_D_f, r_L_mpc, k_plus, k_minus):
     """F(l, n_s) = l(l+1)(2/L) I_+ * I_- used to get b"""
     eps = ns - 1.0
     Ip = I_plus(ell, r_L_mpc, k_plus)
@@ -110,22 +99,19 @@ def F_b_factor(ell: int, ns: float, *, L: float, k_p: float, k_D_i: float, k_D_f
 
 
 def b_ell_ns(
-    ell: int,
-    ns: float,
+    ell,
+    ns,
     *,
-    k_D_i: float,
-    k_D_f: float,
-    k_p: float,
-    r_L_mpc: float = 14000.0,
-    k_plus_grid: np.ndarray | None = None,
-    k_minus_grid: np.ndarray | None = None,
-    ell_ref: int = 50,
-    ns_ref: float = 0.965,
-) -> float:
-    """
-    numerically integrate to get b(l, n_s), use factorized integrals:
-        b(l, n_s) = b_analytic(n_{s,ref}) * F(l, n_s) / F(l_ref, n_{s,ref})
-    """
+    k_D_i,
+    k_D_f,
+    k_p,
+    r_L_mpc = 14000.0,
+    k_plus_grid = None,
+    k_minus_grid = None,
+    ell_ref = 50,
+    ns_ref = 0.965,
+):
+    """Compute b(ell, n_s) from the normalized factorized integrals."""
     if k_plus_grid is None:
         k_plus_grid = np.logspace(-5.0, 0.0, 400)
     if k_minus_grid is None:
@@ -150,18 +136,16 @@ def b_ell_ns(
 
 
 def db_dns_central(
-    ell: int,
-    ns: float,
-    h: float,
+    ell,
+    ns,
+    h,
     *,
-    k_D_i: float,
-    k_D_f: float,
-    k_p: float,
+    k_D_i,
+    k_D_f,
+    k_p,
     **kwargs,
-) -> float:
-    """
-    db/dn_s: discrete derivative, h small
-    """
+):
+    """Compute the central finite-difference derivative of b with respect to n_s."""
     return (
         b_ell_ns(ell, ns + h, k_D_i=k_D_i, k_D_f=k_D_f, k_p=k_p, **kwargs)
         - b_ell_ns(ell, ns - h, k_D_i=k_D_i, k_D_f=k_D_f, k_p=k_p, **kwargs)
@@ -185,15 +169,15 @@ class FisherMuTResult:
 
 
 def _b_and_db(
-    ell: np.ndarray,
-    ns_fid: float,
-    k_D_i: float,
-    k_D_f: float,
-    k_p: float,
-    dns_step: float,
-    use_b_analytic: bool,
-    b_kw: dict[str, Any],
-) -> tuple[np.ndarray, np.ndarray | float]:
+    ell,
+    ns_fid,
+    k_D_i,
+    k_D_f,
+    k_p,
+    dns_step,
+    use_b_analytic,
+    b_kw,
+):
     ell_i = ell.astype(int)
     if use_b_analytic:
         b0 = b_analytic(ns_fid, k_D_i, k_D_f, k_p)
@@ -213,19 +197,19 @@ def _b_and_db(
 
 
 def _Cl_derivative_matrix(
-    ell: np.ndarray,
-    fnl_fid: float,
-    ns_fid: float,
-    k_D_i: float,
-    k_D_f: float,
-    k_p: float,
-    dns_step: float,
-    use_b_analytic: bool,
-    b_kw: dict[str, Any],
+    ell,
+    fnl_fid,
+    ns_fid,
+    k_D_i,
+    k_D_f,
+    k_p,
+    dns_step,
+    use_b_analytic,
+    b_kw,
     *,
-    As_fid: float,
-    include_As: bool,
-) -> tuple[np.ndarray, tuple[str, ...]]:
+    As_fid,
+    include_As,
+):
     b, db_or_scalar = _b_and_db(
         ell, ns_fid, k_D_i, k_D_f, k_p, dns_step, use_b_analytic, b_kw
     )
@@ -241,24 +225,24 @@ def _Cl_derivative_matrix(
 
 
 def fisher_muT_general(
-    ell: np.ndarray,
-    fwhm_deg: float,
-    fnl_fid: float,
-    ns_fid: float,
-    k_D_i: float,
-    k_D_f: float,
-    k_p: float,
+    ell,
+    fwhm_deg,
+    fnl_fid,
+    ns_fid,
+    k_D_i,
+    k_D_f,
+    k_p,
     *,
-    dns_step: float = 5e-5,
-    sigma_ns_prior: float | None = 0.004,
-    sigma_As_prior: float | None = None,
-    include_As: bool | None = None,
-    As_fid: float = AS_FID_LEGACY,
-    use_b_analytic: bool = False,
-    b_integral_kw: dict[str, Any] | None = None,
-    variance_at_fiducial: bool = True,
-) -> FisherMuTResult:
-    r"""Gaussian Fisher (Tier A: \sigma_l^2 at fiducial A_s). See fisher_matrix module docstring for Tier B."""
+    dns_step = 5e-5,
+    sigma_ns_prior = 0.004,
+    sigma_As_prior = None,
+    include_As = None,
+    As_fid = AS_FID_LEGACY,
+    use_b_analytic = False,
+    b_integral_kw = None,
+    variance_at_fiducial = True,
+):
+    r"""Compute the Gaussian Fisher matrix for the muT band-power model."""
     if not variance_at_fiducial:
         warnings.warn(
             "Tier B Fisher not implemented; using fiducial \\sigma_\l^2.",
@@ -320,17 +304,17 @@ def fisher_muT_general(
 
 
 def fisher_1d_fnl_only(
-    ell: np.ndarray,
-    fwhm_deg: float,
-    ns_fid: float,
-    k_D_i: float,
-    k_D_f: float,
-    k_p: float,
+    ell,
+    fwhm_deg,
+    ns_fid,
+    k_D_i,
+    k_D_f,
+    k_p,
     *,
-    As_fid: float = AS_FID_LEGACY,
-    use_b_analytic: bool = True,
-    b_integral_kw: dict[str, Any] | None = None,
-) -> float:
+    As_fid = AS_FID_LEGACY,
+    use_b_analytic = True,
+    b_integral_kw = None,
+):
     r"""F = sum{l (dC/df_NL)^2/\sigma_l^2} with Cl_TT(As_fid)"""
     b_kw = dict(b_integral_kw or {})
     cl_tt = Cl_TT(ell, As_fid)
@@ -349,7 +333,7 @@ def fisher_1d_fnl_only(
     return float(np.sum(K_fnl**2 / var))
 
 
-def default_ell_grid(fwhm_deg: float, ell_min: int = 2) -> np.ndarray:
+def default_ell_grid(fwhm_deg, ell_min = 2):
     lmax = ell_max_from_fwhm_deg(fwhm_deg)
     return np.arange(ell_min, int(np.ceil(lmax)) + 1, dtype=float)
 

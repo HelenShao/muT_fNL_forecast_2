@@ -1,17 +1,4 @@
-r"""
-§4.c.ii–iv — Comparison panels: PIXIE vs SPECTER, §3 (no dust) vs §4 (dust), and
-marginalized vs fixed dust nuisances.
-
-Outputs ``section4_marginalization_comparison_fnl{tag}.pdf`` (+ CSV) under
-``section4_foregrounds/{pipeline}/``.
-
-Run::
-
-    python3 plot_section4_marginalization_comparison.py \\
-        --section4-config /path/to/section4_foregrounds/analytic_cltt_analytic_b/logs/config.json
-
-    python3 plot_section4_marginalization_comparison.py --section4-config /path/to/config.json --cf-ref 1
-"""
+'§4.c.ii–iv — Comparison panels: PIXIE vs SPECTER, §3 (no dust) vs §4 (dust), and.'
 
 from __future__ import annotations
 
@@ -39,19 +26,19 @@ FWHM_PIXIE = 1.6
 FWHM_SPECTER = 1.0
 
 
-def _fnl_file_tag(fnl: float) -> str:
+def _fnl_file_tag(fnl):
     if math.isfinite(fnl) and abs(fnl - round(fnl)) < 1e-9:
         return str(int(round(fnl)))
     return str(fnl).replace(".", "p")
 
 
-def _cf_file_tag(c_f: float) -> str:
+def _cf_file_tag(c_f):
     if math.isfinite(c_f) and abs(c_f - round(c_f)) < 1e-6:
         return str(int(round(c_f)))
     return str(c_f).replace(".", "p")
 
 
-def _fnl_list(args: argparse.Namespace) -> list[float]:
+def _fnl_list(args):
     if args.section4_config is not None:
         p = Path(args.section4_config).expanduser().resolve()
         if not p.is_file():
@@ -68,11 +55,11 @@ def _fnl_list(args: argparse.Namespace) -> list[float]:
 
 def _sigma_dust(
     *,
-    experiment: str,
-    fnl_fid: float,
-    c_f: float,
-    marginalize_dust: bool,
-) -> float:
+    experiment,
+    fnl_fid,
+    c_f,
+    marginalize_dust,
+):
     fwhm, w_inv = (FWHM_PIXIE, W_MU_INV_PIXIE) if experiment == "pixie" else (FWHM_SPECTER, W_MU_INV_SPECTER)
     ell = default_ell_grid(fwhm)
     r = fisher_muT_fnl_ns_with_dust(
@@ -99,7 +86,7 @@ def _sigma_dust(
     return float(r.sigma["fnl"])
 
 
-def _sigma_s3(*, experiment: str, fnl_fid: float) -> float:
+def _sigma_s3(*, experiment, fnl_fid):
     fwhm, w_inv = (FWHM_PIXIE, W_MU_INV_PIXIE) if experiment == "pixie" else (FWHM_SPECTER, W_MU_INV_SPECTER)
     ell = default_ell_grid(fwhm)
     r = fisher_muT_general(
@@ -119,7 +106,7 @@ def _sigma_s3(*, experiment: str, fnl_fid: float) -> float:
     return float(r.sigma_fnl_marg)
 
 
-def main() -> None:
+def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--fnl-fid", type=float, default=25000.0, help="Single fiducial if no config.")
     ap.add_argument("--fnl-fiducials", type=str, default=None)

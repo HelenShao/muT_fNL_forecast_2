@@ -1,19 +1,4 @@
-r"""
-Overlay \((f_{\mathrm{NL}}, n_s)\) Gaussian Fisher contours: residual dust marginalized at fixed
-cleaning factor \(c_f\) vs.\ no dust in the \(\mu\mu\) band-power variance (same priors as the
-usual 3D \(\mu T\) Fisher: Planck \(n_s\) and \(A_s\)).
-
-Two panels per figure (PIXIE and SPECTER). 68\% region: filled (\(\Delta\chi^2<2.30\), \(\alpha=0.7\)).
-95\%: dashed outline (\(\Delta\chi^2=5.99\)), unfilled.
-
-Colors: dust marginalized \texttt{\#5A4FB6}; no dust \texttt{\#C7873C} (gold drawn above purple).
-
-Outputs under ``section4_foregrounds/{pipeline}/figures/``.
-
-Run::
-
-    python3 plot_fnl_ns_dust_marg_overlay.py --fnl-fid 1 --cf 1000
-"""
+'Overlay \\((f_{\\mathrm{NL}}, n_s)\\) Gaussian Fisher contours: residual dust marginalized at fixed.'
 
 from __future__ import annotations
 
@@ -45,19 +30,19 @@ COL_DUST_MARG = "#5A4FB6"
 COL_NO_DUST = "#C7873C"
 
 
-def _fnl_file_tag(fnl: float) -> str:
+def _fnl_file_tag(fnl):
     if math.isfinite(fnl) and abs(fnl - round(fnl)) < 1e-9:
         return str(int(round(fnl)))
     return str(fnl).replace(".", "p")
 
 
-def _cf_file_tag(c_f: float) -> str:
+def _cf_file_tag(c_f):
     if math.isfinite(c_f) and abs(c_f - round(c_f)) < 1e-6:
         return str(int(round(c_f)))
     return str(c_f).replace(".", "p")
 
 
-def _fnl_list(args: argparse.Namespace) -> list[float]:
+def _fnl_list(args):
     if args.section4_config is not None:
         p = Path(args.section4_config).expanduser().resolve()
         if not p.is_file():
@@ -74,11 +59,11 @@ def _fnl_list(args: argparse.Namespace) -> list[float]:
 
 def _cov_fnl_ns_no_dust(
     *,
-    experiment: str,
-    fnl_fid: float,
-    use_b_analytic: bool,
-    cl_tt_txt_dir: str | None,
-) -> np.ndarray:
+    experiment,
+    fnl_fid,
+    use_b_analytic,
+    cl_tt_txt_dir,
+):
     fwhm, w_inv = (FWHM_PIXIE, W_MU_INV_PIXIE) if experiment == "pixie" else (FWHM_SPECTER, W_MU_INV_SPECTER)
     ell = default_ell_grid(fwhm)
     r = fisher_muT_general(
@@ -103,12 +88,12 @@ def _cov_fnl_ns_no_dust(
 
 def _cov_fnl_ns_dust_marg(
     *,
-    experiment: str,
-    fnl_fid: float,
-    c_f: float,
-    use_b_analytic: bool,
-    cl_tt_txt_dir: str | None,
-) -> np.ndarray:
+    experiment,
+    fnl_fid,
+    c_f,
+    use_b_analytic,
+    cl_tt_txt_dir,
+):
     fwhm, w_inv = (FWHM_PIXIE, W_MU_INV_PIXIE) if experiment == "pixie" else (FWHM_SPECTER, W_MU_INV_SPECTER)
     ell = default_ell_grid(fwhm)
     r = fisher_muT_fnl_ns_with_dust(
@@ -137,13 +122,13 @@ def _cov_fnl_ns_dust_marg(
 
 
 def _combined_xy_grid(
-    covs: list[np.ndarray],
-    x0: float,
-    y0: float,
+    covs,
+    x0,
+    y0,
     *,
-    n_grid: int,
-    sigma_extent: float,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    n_grid,
+    sigma_extent,
+):
     sx = sy = 0.0
     for c in covs:
         ex, ey = _grid_extent_from_2d_cov(c, extent_sigma=sigma_extent)
@@ -158,14 +143,14 @@ def _combined_xy_grid(
 def _plot_overlay_panel(
     ax,
     *,
-    cov_no_dust: np.ndarray,
-    cov_dust_marg: np.ndarray,
-    fnl_fid: float,
-    ns_fid: float,
-    experiment_label: str,
-    n_grid: int,
-    sigma_extent: float,
-) -> None:
+    cov_no_dust,
+    cov_dust_marg,
+    fnl_fid,
+    ns_fid,
+    experiment_label,
+    n_grid,
+    sigma_extent,
+):
     X, Y, gx, gy = _combined_xy_grid(
         [cov_no_dust, cov_dust_marg],
         fnl_fid,
@@ -228,12 +213,12 @@ def _plot_overlay_panel(
 
 def _run_one_fnl(
     *,
-    fnl_fid: float,
-    c_f: float,
-    pipeline: str,
-    n_grid: int,
-    sigma_extent: float,
-) -> None:
+    fnl_fid,
+    c_f,
+    pipeline,
+    n_grid,
+    sigma_extent,
+):
     camb = pipeline == "camb_cltt_analytic_b"
     cl_tt_txt_dir = os.path.dirname(os.path.abspath(__file__)) if camb else None
 
@@ -314,7 +299,7 @@ def _run_one_fnl(
     print(out.resolve(), flush=True)
 
 
-def main() -> None:
+def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--fnl-fid", type=float, default=1.0)
     ap.add_argument(

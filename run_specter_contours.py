@@ -7,7 +7,7 @@ import contours
 from output_paths import contours_specter_dir, ensure_dir
 
 
-def main() -> None:
+def main():
     out = ensure_dir(contours_specter_dir())
     contours.main(["--specter", "--output-dir", str(out)])
 

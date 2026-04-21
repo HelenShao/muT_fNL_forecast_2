@@ -1,32 +1,4 @@
-r"""
-Fisher \(\Delta\chi^2\) contour experiments: styles, colormaps, and multi-panel layouts.
-
-Uses a **3-parameter** Gaussian Fisher \((f_{\mathrm{NL}}, n_s, A_s)\) with Planck-style priors
-on \(n_s\) and \(A_s\). Pairwise plots marginalize the third parameter (full \(3\times3\) cov,
-then \(2\times2\) inverse precision in each plane).
-
-For **three** jointly constrained parameters, constant-\(\Delta\chi^2\) regions are **ellipsoids**
-\(\{\delta\theta : \delta\theta^\top \mathbf{F}\,\delta\theta = \Delta\chi^2\}\) with thresholds
-from \(\chi^2\) with 3 degrees of freedom (not the same numbers as the 2D case). One script
-output draws these as 3D surfaces (``contours_3d_ellipsoids.pdf``). Matplotlib does not build
-arbitrary volumetric isosurfaces; for smooth “egg” shapes the analytic ellipsoid is appropriate.
-
-Run from this directory::
-
-    python3 contours.py
-
-Save figures only (default; no GUI). Add ``--show`` to open each figure interactively::
-
-    python3 contours.py
-
-To capture printed paths or logs to a text file, redirect stdout/stderr::
-
-    python3 contours.py > contours_run.txt 2>&1
-
-By default, PDFs are written under ``cmbs4/results/contours_pixie/`` (PIXIE) or
-``cmbs4/results/contours_specter/`` with ``--specter`` — see ``output_paths.py``.
-Override with ``--output-dir``. ``run_specter_contours.py`` runs this module with SPECTER output.
-"""
+'Fisher \\(\\Delta\\chi^2\\) contour experiments: styles, colormaps, and multi-panel layouts.'
 
 from __future__ import annotations
 
@@ -70,17 +42,15 @@ DNS_STEP = 5e-5
 
 
 def marginal_delta_chi2_2d(
-    cov_full: np.ndarray,
-    i: int,
-    j: int,
-    x: np.ndarray,
-    y: np.ndarray,
-    x0: float,
-    y0: float,
-) -> np.ndarray:
-    r"""
-    \Delta\chi^2 for the marginalized 2D Gaussian of parameters (i, j) about (x0, y0).
-    """
+    cov_full,
+    i,
+    j,
+    x,
+    y,
+    x0,
+    y0,
+):
+    r"""Compute marginalized 2D delta-chi-squared on a parameter grid."""
     block = cov_full[np.ix_([i, j], [i, j])]
     prec = np.linalg.inv(block)
     X, Y = np.meshgrid(x, y, indexing="xy")
@@ -94,15 +64,15 @@ def marginal_delta_chi2_2d(
 
 
 def _grid_for_pair(
-    cov: np.ndarray,
-    i: int,
-    j: int,
-    c0: float,
-    c1: float,
+    cov,
+    i,
+    j,
+    c0,
+    c1,
     *,
-    n_grid: int,
-    sigma_extent: float,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    n_grid,
+    sigma_extent,
+):
     sig = np.sqrt(np.diag(cov))
     sx = sigma_extent * sig[i]
     sy = sigma_extent * sig[j]
@@ -114,17 +84,13 @@ def _grid_for_pair(
 
 
 def _fisher_ellipsoid_mesh(
-    P: np.ndarray,
-    theta0: np.ndarray,
-    k_chi2: float,
-    nu: int = 48,
-    nv: int = 48,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    r"""
-    Parametric mesh for the surface
-    \(\{\theta : (\theta-\theta_0)^\top \mathbf{P}(\theta-\theta_0) = k\}\)
-    with \(\mathbf{P}\) the precision matrix and \(k = \Delta\chi^2\) (not \(\sqrt{k}\)).
-    """
+    P,
+    theta0,
+    k_chi2,
+    nu = 48,
+    nv = 48,
+):
+    r"""Build a parametric mesh for a constant delta-chi-squared ellipsoid."""
     w, V = np.linalg.eigh(P)
     w = np.maximum(w, 1e-18)
     u = np.linspace(0, 2 * np.pi, nu, endpoint=False)
@@ -143,31 +109,23 @@ def _fisher_ellipsoid_mesh(
     return X, Y, Z
 
 
-def _precision_in_plot_coords(P_physical: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """
-    Map (f_NL, n_s, A_s) to plot axes (f_NL/1e4, n_s, 10^9 A_s) so 3D axes are readable.
-
-    If d_plot = T^{-1} d_phys with T = diag(1e4, 1, 1e-9), then
-    d_phys^T P d_phys = d_plot^T (T P T) d_plot.
-    """
+def _precision_in_plot_coords(P_physical):
+    """Transform the precision matrix into the scaled plotting coordinate system."""
     T = np.diag([1e4, 1.0, 1e-9])
     P_plot = T @ P_physical @ T
     return P_plot, T
 
 
 def variant_3d_ellipsoid_surfaces(
-    F_total: np.ndarray,
+    F_total,
     *,
-    fnl_fid: float,
-    ns_fid: float,
-    as_fid: float,
-    outdir: Path,
-    show: bool,
-) -> Path:
-    r"""
-    3D **joint** Fisher ellipsoids: constant \(\Delta\chi^2 = \chi^2_{3,\mathrm{CL}}\) surfaces
-    in \((f_{\mathrm{NL}}, n_s, A_s)\) space (scaled axes for display).
-    """
+    fnl_fid,
+    ns_fid,
+    as_fid,
+    outdir,
+    show,
+):
+    r"""Plot joint 3D Fisher ellipsoid surfaces in scaled parameter coordinates."""
     import matplotlib.pyplot as plt
 
     P_plot, _ = _precision_in_plot_coords(F_total)
@@ -238,7 +196,7 @@ def variant_3d_ellipsoid_surfaces(
     return outp
 
 
-def apply_publication_rc() -> None:
+def apply_publication_rc():
     import matplotlib as mpl
 
     apply_plot_params()
@@ -267,11 +225,11 @@ def apply_publication_rc() -> None:
 
 def variant_legacy_2param_fnl_ns(
     *,
-    ell: np.ndarray,
-    outdir: Path,
-    show: bool,
-    w_mu_inv: float = W_MU_INV_PIXIE,
-) -> Path:
+    ell,
+    outdir,
+    show,
+    w_mu_inv = W_MU_INV_PIXIE,
+):
     """Original 2-parameter Fisher (no A_s): f_NL vs n_s, discrete bands."""
     import matplotlib.pyplot as plt
 
@@ -332,16 +290,16 @@ def variant_legacy_2param_fnl_ns(
 
 
 def variant_triple_discrete(
-    cov: np.ndarray,
+    cov,
     *,
-    fnl_fid: float,
-    ns_fid: float,
-    as_fid: float,
-    outdir: Path,
-    show: bool,
-    n_grid: int = 200,
-    sigma_extent: float = 3.0,
-) -> Path:
+    fnl_fid,
+    ns_fid,
+    as_fid,
+    outdir,
+    show,
+    n_grid = 200,
+    sigma_extent = 3.0,
+):
     """Three pairwise marginals; soft discrete fills + black contours (main_3d-like, styled)."""
     import matplotlib.pyplot as plt
 
@@ -398,16 +356,16 @@ def variant_triple_discrete(
 
 
 def variant_triple_cmap(
-    cov: np.ndarray,
+    cov,
     *,
-    fnl_fid: float,
-    ns_fid: float,
-    as_fid: float,
-    outdir: Path,
-    show: bool,
-    n_grid: int = 220,
-    sigma_extent: float = 3.0,
-) -> Path:
+    fnl_fid,
+    ns_fid,
+    as_fid,
+    outdir,
+    show,
+    n_grid = 220,
+    sigma_extent = 3.0,
+):
     """Three pairwise marginals with continuous ``contourf`` + per-panel colorbars (cividis)."""
     import matplotlib.pyplot as plt
 
@@ -468,19 +426,16 @@ def variant_triple_cmap(
 
 
 def variant_fnl_ns_lognorm_colorbar(
-    cov: np.ndarray,
+    cov,
     *,
-    fnl_fid: float,
-    ns_fid: float,
-    outdir: Path,
-    show: bool,
-    n_grid: int = 250,
-    sigma_extent: float = 4.5,
-) -> Path:
-    """
-    Single (f_NL, n_s) marginal with log-scaled color mapping (cf. contourf_log gallery).
-    Uses LogNorm for positive \\Delta\\chi^2; small floor avoids log(0).
-    """
+    fnl_fid,
+    ns_fid,
+    outdir,
+    show,
+    n_grid = 250,
+    sigma_extent = 4.5,
+):
+    """Plot a single marginalized (f_NL, n_s) panel with logarithmic color scaling."""
     import matplotlib as mpl
     import matplotlib.pyplot as plt
 
@@ -522,15 +477,15 @@ def variant_fnl_ns_lognorm_colorbar(
 
 
 def variant_fnl_ns_line_clabel(
-    cov: np.ndarray,
+    cov,
     *,
-    fnl_fid: float,
-    ns_fid: float,
-    outdir: Path,
-    show: bool,
-    n_grid: int = 200,
-    sigma_extent: float = 3.0,
-) -> Path:
+    fnl_fid,
+    ns_fid,
+    outdir,
+    show,
+    n_grid = 200,
+    sigma_extent = 3.0,
+):
     """Contour-only demo with inline labels (matplotlib contour_demo style)."""
     import matplotlib.pyplot as plt
 
@@ -568,15 +523,15 @@ def variant_fnl_ns_line_clabel(
 
 
 def variant_fnl_ns_hatch(
-    cov: np.ndarray,
+    cov,
     *,
-    fnl_fid: float,
-    ns_fid: float,
-    outdir: Path,
-    show: bool,
-    n_grid: int = 200,
-    sigma_extent: float = 3.0,
-) -> Path:
+    fnl_fid,
+    ns_fid,
+    outdir,
+    show,
+    n_grid = 200,
+    sigma_extent = 3.0,
+):
     """Filled regions with hatching between confidence levels (contourf_demo-style)."""
     import matplotlib.pyplot as plt
 
@@ -620,7 +575,7 @@ def variant_fnl_ns_hatch(
     return outp
 
 
-def main(argv: list[str] | None = None) -> None:
+def main(argv = None):
     p = argparse.ArgumentParser(
         description="Fisher contour style experiments (2D and 3D marginal projections)."
     )

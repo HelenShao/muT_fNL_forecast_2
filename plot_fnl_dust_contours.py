@@ -1,14 +1,4 @@
-r"""
-2D marginalized \((f_{\mathrm{NL}}, A_D)\) and \((f_{\mathrm{NL}}, \alpha_D)\) for the section-4 dust model,
-in the same style as ``main_3d.plot_fnl_ns_single``: filled **1σ** \(\Delta\chi^2<2.30\) region,
-**1σ** solid and **2σ** dotted contours (\(\Delta\chi^2=2.30, 5.99\)).
-
-Outputs under ``section4_foregrounds/{pipeline}/figures/``.
-
-Run::
-
-    python3 plot_fnl_dust_contours.py --experiment specter --cf 1000 --fnl-fid 1
-"""
+'2D marginalized \\((f_{\\mathrm{NL}}, A_D)\\) and \\((f_{\\mathrm{NL}}, \\alpha_D)\\) for the section-4 dust model.'
 
 from __future__ import annotations
 
@@ -37,18 +27,10 @@ DELTA_CHI2_LEVELS_2D = (2.30, 5.99, 9.21)
 
 
 def _grid_extent_from_2d_cov(
-    cov_2d: np.ndarray,
-    extent_sigma: float = 3.0,
-) -> tuple[float, float]:
-    r"""
-    Compute grid extent from a 2×2 covariance block.
-    
-    Returns (extent_x, extent_y) such that the grid properly displays the contours
-    by using the eigenvalues (semi-axes) of the covariance ellipse.
-    
-    This ensures that the grid is large enough to show the full Δχ² contours
-    while accounting for correlations (off-diagonal terms).
-    """
+    cov_2d,
+    extent_sigma = 3.0,
+):
+    r"""Estimate plotting extents from a 2x2 covariance block."""
     evals = np.linalg.eigvals(cov_2d)
     evals = np.abs(evals)  # Ensure non-negative
     if np.any(evals <= 0):
@@ -61,14 +43,14 @@ def _grid_extent_from_2d_cov(
 
 
 def marginal_delta_chi2_2d(
-    cov_full: np.ndarray,
-    i: int,
-    j: int,
-    x: np.ndarray,
-    y: np.ndarray,
-    x0: float,
-    y0: float,
-) -> np.ndarray:
+    cov_full,
+    i,
+    j,
+    x,
+    y,
+    x0,
+    y0,
+):
     block = cov_full[np.ix_([i, j], [i, j])]
     prec = np.linalg.inv(block)
     X, Y = np.meshgrid(x, y, indexing="xy")
@@ -78,22 +60,16 @@ def marginal_delta_chi2_2d(
 
 
 def _chi2_grid(
-    cov_full: np.ndarray,
-    i: int,
-    j: int,
-    x0: float,
-    y0: float,
+    cov_full,
+    i,
+    j,
+    x0,
+    y0,
     *,
-    n_grid: int = 200,
-    sigma_extent: float = 3.0,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Compute grid and marginalized Δχ² for parameters (i, j).
-    
-    The grid extent is determined by the eigenvalues of the 2×2 covariance block,
-    which properly accounts for correlations. The chi2 statistic is computed from
-    the full inverse covariance (precision matrix), correctly encoding both variances
-    and correlations through the off-diagonal terms.
-    """
+    n_grid = 200,
+    sigma_extent = 3.0,
+):
+    """Build a parameter grid and its marginalized delta-chi-squared values."""
     cov_block = cov_full[np.ix_([i, j], [i, j])]
     sx, sy = _grid_extent_from_2d_cov(cov_block, extent_sigma=sigma_extent)
     gx = np.linspace(x0 - sx, x0 + sx, n_grid)
@@ -105,19 +81,19 @@ def _chi2_grid(
 
 def _plot_marginal_chi2_panel(
     ax,
-    cov: np.ndarray,
-    i: int,
-    j: int,
-    x0: float,
-    y0: float,
+    cov,
+    i,
+    j,
+    x0,
+    y0,
     *,
-    xlabel: str,
-    ylabel: str,
-    title: str,
-    color: str,
-    n_grid: int = 200,
-    sigma_extent: float = 3.0,
-) -> None:
+    xlabel,
+    ylabel,
+    title,
+    color,
+    n_grid = 200,
+    sigma_extent = 3.0,
+):
     X, Y, chi2 = _chi2_grid(cov, i, j, x0, y0, n_grid=n_grid, sigma_extent=sigma_extent)
     lev1, lev2 = DELTA_CHI2_LEVELS_2D[0], DELTA_CHI2_LEVELS_2D[1]
     ax.contourf(X, Y, chi2, levels=[0.0, lev1], colors=[color], alpha=0.25)
@@ -139,7 +115,7 @@ def _plot_marginal_chi2_panel(
     ax.grid(True, alpha=0.35, linestyle=":")
 
 
-def main() -> None:
+def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--experiment", choices=("pixie", "specter"), default="specter")
     ap.add_argument("--cf", type=float, default=1000.0)

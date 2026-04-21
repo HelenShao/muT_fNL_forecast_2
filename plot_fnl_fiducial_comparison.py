@@ -1,12 +1,4 @@
-r"""
-Wide comparison plot: $\sigma(f_{\rm NL})$ vs $f_{\rm NL}^{\rm fid}$ for PIXIE and SPECTER (3D Fisher).
-
-Reads ``forecast_3d_grid.txt`` from ``run_section3.py`` or accepts inline defaults.
-
-Run::
-
-    python3 run_section3.py && python3 plot_fnl_fiducial_comparison.py --grid section3_extension/...
-"""
+'Wide comparison plot: $\\sigma(f_{\\rm NL})$ vs $f_{\\rm NL}^{\\rm fid}$ for PIXIE and SPECTER (3D Fisher).'
 
 from __future__ import annotations
 
@@ -23,7 +15,7 @@ except ImportError:
 from output_paths import section_subdir
 
 
-def main() -> None:
+def main():
     ap = argparse.ArgumentParser()
     ap.add_argument(
         "--grid",

@@ -1,15 +1,4 @@
-r"""
-§4.b — \(\sigma(f_{\rm NL})\) vs foreground cleaning factor \(c_f\) (log-spaced grid).
-
-Uses ``fisher_muT_fnl_ns_with_dust`` on ``default_ell_grid(fwhm)`` (same footprint as other §4 plots).
-Writes per-experiment PDF/CSV/TXT tagged by \(f_{\rm NL}^{\rm fid}\).
-
-Run::
-
-    python3 plot_sigma_fnl_vs_cf.py --fnl-fid 25000
-
-    python3 plot_sigma_fnl_vs_cf.py --section4-config .../logs/config.json
-"""
+'§4.b — \\(\\sigma(f_{\\rm NL})\\) vs foreground cleaning factor \\(c_f\\) (log-spaced grid).'
 
 from __future__ import annotations
 
@@ -37,13 +26,13 @@ FWHM_PIXIE = 1.6
 FWHM_SPECTER = 1.0
 
 
-def _fnl_file_tag(fnl: float) -> str:
+def _fnl_file_tag(fnl):
     if math.isfinite(fnl) and abs(fnl - round(fnl)) < 1e-9:
         return str(int(round(fnl)))
     return str(fnl).replace(".", "p")
 
 
-def _fnl_list_from_args(args: argparse.Namespace) -> list[float]:
+def _fnl_list_from_args(args):
     if args.section4_config is not None:
         p = Path(args.section4_config).expanduser().resolve()
         if not p.is_file():
@@ -65,7 +54,7 @@ def _fnl_list_from_args(args: argparse.Namespace) -> list[float]:
     return [float(args.fnl_fid)]
 
 
-def _sigma_section3_no_dust(*, experiment: str, fnl_fid: float) -> float:
+def _sigma_section3_no_dust(*, experiment, fnl_fid):
     fwhm, w_inv = (FWHM_PIXIE, W_MU_INV_PIXIE) if experiment == "pixie" else (FWHM_SPECTER, W_MU_INV_SPECTER)
     ell = default_ell_grid(fwhm)
     r = fisher_muT_general(
@@ -87,11 +76,11 @@ def _sigma_section3_no_dust(*, experiment: str, fnl_fid: float) -> float:
 
 def run_one_fnl(
     *,
-    fnl_fid: float,
-    n_cf: int,
-    pipeline: str,
-    compare_section3: bool,
-) -> None:
+    fnl_fid,
+    n_cf,
+    pipeline,
+    compare_section3,
+):
     tag = _fnl_file_tag(float(fnl_fid))
     dirs = ensure_section_layout("section4_foregrounds", pipeline)
     cfs = np.logspace(2.0, 4.0, int(n_cf))
@@ -209,7 +198,7 @@ def run_one_fnl(
     print(out.resolve(), flush=True)
 
 
-def main() -> None:
+def main():
     ap = argparse.ArgumentParser(description="§4.b sigma(fnl) vs c_f (PIXIE and SPECTER).")
     ap.add_argument("--fnl-fid", type=float, default=25000.0)
     ap.add_argument("--fnl-fiducials", type=str, default=None)

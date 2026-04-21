@@ -1,11 +1,4 @@
-r"""
-Plot \(C_\ell^{\mu\mu,\mathrm{sig}}\), \((C_\ell^{\mu T})^2\), \(C_\ell^{TT}\), and \(C_\ell^{\mu\mu,N}\) vs \(\ell\)
-for visual comparison (Phase 1 diagnostic).
-
-Run from ``muT_fNL_forecast_2``::
-
-    python3 plot_muT_variance_terms.py --output figures/muT_variance_terms.pdf
-"""
+'Plot \\(C_\\ell^{\\mu\\mu,\\mathrm{sig}}\\), \\((C_\\ell^{\\mu T})^2\\), \\(C_\\ell^{TT}\\), and \\(C_\\ell^{\\mu\\mu,N}\\) vs \\(\\ell\\).'
 
 from __future__ import annotations
 
@@ -23,7 +16,7 @@ except ImportError:
     from plot_params import apply_plot_params
 
 
-def main() -> None:
+def main():
     p = argparse.ArgumentParser()
     p.add_argument("--fwhm-deg", type=float, default=1.6)
     p.add_argument("--fnl-fid", type=float, default=25_000.0)

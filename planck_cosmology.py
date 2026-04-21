@@ -1,12 +1,4 @@
-"""Planck 2018 best-fit LCDM unlensed C_l^TT from CAMB, plus bracket spectra for d C_l^TT / d n_s and d C_l^TT / d A_s.
-
-Importing this module runs CAMB five times (fiducial + four brackets). Use with
-``spectra.dCl_TT_dns_numerical(cl_tt_ns_high, cl_tt_ns_low, NS_HIGH, NS_LOW)`` and the
-analogous ``dCl_TT_dAs_numerical`` for ``AS_HIGH`` / ``AS_LOW``.
-
-Run as ``python planck_cosmology.py`` to write ``cl_tt_fiducial.txt`` and the four bracket
-files (two-column ``ell``, ``Cl_TT`` in muK^2) next to this script; see ``save_planck2018_cltt_bundle``.
-"""
+'Planck 2018 best-fit LCDM unlensed C_l^TT from CAMB, plus bracket spectra for d C_l^TT / d n_s and d C_l^TT / d A_s.'
 
 from __future__ import annotations
 
@@ -41,7 +33,7 @@ NS_FID = 0.965
 AS_FID = AS_FID_PLANCK2018  # 2.1e-9
 
 
-def _lcdm_params() -> camb.CAMBparams:
+def _lcdm_params():
     p = camb.CAMBparams()
     p.set_cosmology(
         H0=H0_PLANCK2018,
@@ -52,11 +44,8 @@ def _lcdm_params() -> camb.CAMBparams:
     return p
 
 
-def cltt_unlensed_muK(*, ns: float, as_: float) -> np.ndarray:
-    """Return CAMB unlensed *scalar* C_l^TT (muK^2) for ``as_`` (= A_s) and ``ns``.
-
-    Uses ``unlensed_scalar`` (not ``unlensed_total``); they match when tensor B-modes are negligible.
-    """
+def cltt_unlensed_muK(*, ns, as_):
+    """Return CAMB unlensed scalar Cl_TT in muK^2 for the input ns and As values."""
     pars = _lcdm_params()
     pars.InitPower.set_params(As=as_, ns=ns)
     results = camb.get_results(pars)
@@ -78,16 +67,12 @@ cl_tt_As_low = cltt_unlensed_muK(ns=NS_FID, as_=AS_LOW)
 
 
 def save_cltt_to_txt(
-    path: str,
-    cl_tt: np.ndarray,
+    path,
+    cl_tt,
     *,
-    description: str = "",
-) -> str:
-    """
-    Write ``C_l^{TT}`` (muK^2) as two columns: multipole ell (row index 0..lmax) and value.
-
-    Lines starting with ``#`` are comments (CAMB row ``i`` is multipole ``i``).
-    """
+    description = "",
+):
+    """Write Cl_TT values to a two-column text file with ell and spectrum entries."""
     path = os.path.abspath(path)
     parent = os.path.dirname(path)
     if parent:
@@ -102,7 +87,7 @@ def save_cltt_to_txt(
     return path
 
 
-def save_planck2018_cltt_bundle(out_dir: str | None = None) -> list[str]:
+def save_planck2018_cltt_bundle(out_dir = None):
     """Save fiducial and bracket ``C_l^{TT}`` arrays to text files under ``out_dir`` (default: this directory)."""
     if out_dir is None:
         out_dir = os.path.dirname(os.path.abspath(__file__))
@@ -121,16 +106,12 @@ def save_planck2018_cltt_bundle(out_dir: str | None = None) -> list[str]:
 
 
 def plot_cltt_ell_prefactor(
-    cl_tt: np.ndarray,
-    out_path: str,
+    cl_tt,
+    out_path,
     *,
-    title: str = "Planck 2018 unlensed CAMB TT",
-) -> str:
-    """
-    Plot ``ell(ell+1) C_l^{TT} / (2pi)`` from ``ell>=2`` over the full available range.
-
-    ``cl_tt`` is assumed to be CAMB TT in ``muK^2`` indexed by row ``ell``.
-    """
+    title = "Planck 2018 unlensed CAMB TT",
+):
+    """Plot the input Cl_TT array over multipoles and save the resulting figure."""
     cl_tt = np.asarray(cl_tt, dtype=float)
     ell = np.arange(cl_tt.shape[0], dtype=float)
     mask = ell >= 2.0

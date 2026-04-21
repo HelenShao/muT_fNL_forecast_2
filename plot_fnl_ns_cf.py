@@ -1,15 +1,4 @@
-r"""
-2D \((f_{\mathrm{NL}}, n_s)\) Fisher ellipses for several ``c_f`` values (foreground cleaning),
-from ``fisher_foreground.fisher_muT_fnl_ns_with_dust``.
-
-Writes ``fnl_ns_cf_gradient_{pixie|specter}.{pdf,png}`` under
-``cmbs4/results/muT_fNL_runs/section4_foregrounds/analytic_cltt_analytic_b/figures/`` (from
-``ensure_section_layout("section4_foregrounds", "analytic_cltt_analytic_b")``).
-
-Run::
-
-    python3 plot_fnl_ns_cf.py --experiment specter
-"""
+'2D \\((f_{\\mathrm{NL}}, n_s)\\) Fisher ellipses for several ``c_f`` values (foreground cleaning).'
 
 from __future__ import annotations
 
@@ -37,7 +26,7 @@ FWHM_SPECTER = 1.0
 CHI2_LEVEL = 1.0 / 0.434
 
 
-def main() -> None:
+def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--experiment", choices=("pixie", "specter"), default="specter")
     ap.add_argument("--fnl-fid", type=float, default=25000.0, help=r"Fiducial $f_{\rm NL}$ for ellipse center.")

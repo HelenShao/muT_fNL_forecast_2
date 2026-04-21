@@ -1,13 +1,4 @@
-r"""
-Section 4: marginalize over Azzoni-style dust residual (amplitude + tilt) with cleaning factor ``c_f``.
-
-Writes CSVs under ``muT_fNL_runs/section4_foregrounds/{pipeline}/tables/`` for multiple
-``f_{\rm NL}^{\rm fid}`` values and optionally **CAMB** ``C_\ell^{TT}`` (Planck18 bracket files).
-
-Run::
-
-    python3 run_section4.py
-"""
+'Section 4: marginalize over Azzoni-style dust residual (amplitude + tilt) with cleaning factor ``c_f``.'
 
 from __future__ import annotations
 
@@ -39,18 +30,18 @@ FNL_FIDUCIALS = (1.0, 10.0, 1000.0, 15000.0, 25000.0)
 A_D_CODE = AZZONI_A_D_DIMENSIONLESS
 
 
-def _module_dir() -> Path:
+def _module_dir():
     return Path(__file__).resolve().parent
 
 
 def _run_cf_grid(
     *,
-    experiment: str,
-    fnl_fid: float,
-    cl_tt_txt_dir: str | None,
-    use_b_analytic: bool,
-    as_fid: float,
-) -> list[str]:
+    experiment,
+    fnl_fid,
+    cl_tt_txt_dir,
+    use_b_analytic,
+    as_fid,
+):
     fwhm, w_inv = (FWHM_PIXIE, W_MU_INV_PIXIE) if experiment == "pixie" else (FWHM_SPECTER, W_MU_INV_SPECTER)
     ell = default_ell_grid(fwhm)
     lines: list[str] = [
@@ -85,7 +76,7 @@ def _run_cf_grid(
     return lines
 
 
-def _run_pipeline(*, pipeline: str, cl_tt_txt_dir: str | None, use_b_analytic: bool, as_fid: float) -> None:
+def _run_pipeline(*, pipeline, cl_tt_txt_dir, use_b_analytic, as_fid):
     dirs = ensure_section_layout("section4_foregrounds", pipeline)
     cfg = {
         "A_D_code": A_D_CODE,
@@ -110,7 +101,7 @@ def _run_pipeline(*, pipeline: str, cl_tt_txt_dir: str | None, use_b_analytic: b
         (dirs["tables"] / f"foreground_cf_sweep_{exp}.csv").write_text("\n".join(all_lines) + "\n", encoding="utf-8")
 
 
-def main() -> None:
+def main():
     camb_dir = str(_module_dir())
     _run_pipeline(
         pipeline="analytic_cltt_analytic_b",
