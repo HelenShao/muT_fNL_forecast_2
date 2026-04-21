@@ -1,4 +1,4 @@
-"""Planck 2018 best-fit LCDM C_l^TT from CAMB, plus bracket spectra for d C_l^TT / d n_s and d C_l^TT / d A_s.
+"""Planck 2018 best-fit LCDM unlensed C_l^TT from CAMB, plus bracket spectra for d C_l^TT / d n_s and d C_l^TT / d A_s.
 
 Importing this module runs CAMB five times (fiducial + four brackets). Use with
 ``spectra.dCl_TT_dns_numerical(cl_tt_ns_high, cl_tt_ns_low, NS_HIGH, NS_LOW)`` and the
@@ -13,6 +13,7 @@ from __future__ import annotations
 import os
 
 import camb
+import matplotlib.pyplot as plt
 import numpy as np
 
 try:
@@ -21,12 +22,14 @@ try:
         As_brackets_relative,
         ns_brackets_absolute,
     )
+    from .plot_params import apply_plot_params
 except ImportError:
     from spectra import (
         AS_FID_PLANCK2018,
         As_brackets_relative,
         ns_brackets_absolute,
     )
+    from plot_params import apply_plot_params
 
 # Planck 2018 TT,TE,EE+lowE style LCDM (fixed here to match your fiducial runs)
 H0_PLANCK2018 = 67.36
@@ -49,26 +52,29 @@ def _lcdm_params() -> camb.CAMBparams:
     return p
 
 
-def cltt_total_muK(*, ns: float, as_: float) -> np.ndarray:
-    """Return CAMB lensed total C_l^TT (muK^2) for scalar amplitude ``as_`` (= A_s) and tilt ``ns``."""
+def cltt_unlensed_muK(*, ns: float, as_: float) -> np.ndarray:
+    """Return CAMB unlensed *scalar* C_l^TT (muK^2) for ``as_`` (= A_s) and ``ns``.
+
+    Uses ``unlensed_scalar`` (not ``unlensed_total``); they match when tensor B-modes are negligible.
+    """
     pars = _lcdm_params()
     pars.InitPower.set_params(As=as_, ns=ns)
     results = camb.get_results(pars)
     cls = results.get_cmb_power_spectra(pars, CMB_unit="muK")
-    return np.asarray(cls["total"][:, 0], dtype=float)
+    return np.asarray(cls["unlensed_scalar"][:, 0], dtype=float)
 
 
 # Fiducial (Planck best-fit primordial + LCDM above)
-cltt = cltt_total_muK(ns=NS_FID, as_=AS_FID)
+cltt = cltt_unlensed_muK(ns=NS_FID, as_=AS_FID)
 
 # Brackets for central derivatives (same steps as spectra.DNS_CLTT_FD / DAS_REL_CLTT_FD)
 NS_HIGH, NS_LOW = ns_brackets_absolute(NS_FID)
 AS_HIGH, AS_LOW = As_brackets_relative(AS_FID)
 
-cl_tt_ns_high = cltt_total_muK(ns=NS_HIGH, as_=AS_FID)
-cl_tt_ns_low = cltt_total_muK(ns=NS_LOW, as_=AS_FID)
-cl_tt_As_high = cltt_total_muK(ns=NS_FID, as_=AS_HIGH)
-cl_tt_As_low = cltt_total_muK(ns=NS_FID, as_=AS_LOW)
+cl_tt_ns_high = cltt_unlensed_muK(ns=NS_HIGH, as_=AS_FID)
+cl_tt_ns_low = cltt_unlensed_muK(ns=NS_LOW, as_=AS_FID)
+cl_tt_As_high = cltt_unlensed_muK(ns=NS_FID, as_=AS_HIGH)
+cl_tt_As_low = cltt_unlensed_muK(ns=NS_FID, as_=AS_LOW)
 
 
 def save_cltt_to_txt(
@@ -114,7 +120,50 @@ def save_planck2018_cltt_bundle(out_dir: str | None = None) -> list[str]:
     return written
 
 
+def plot_cltt_ell_prefactor(
+    cl_tt: np.ndarray,
+    out_path: str,
+    *,
+    title: str = "Planck 2018 unlensed CAMB TT",
+) -> str:
+    """
+    Plot ``ell(ell+1) C_l^{TT} / (2pi)`` from ``ell>=2`` over the full available range.
+
+    ``cl_tt`` is assumed to be CAMB TT in ``muK^2`` indexed by row ``ell``.
+    """
+    cl_tt = np.asarray(cl_tt, dtype=float)
+    ell = np.arange(cl_tt.shape[0], dtype=float)
+    mask = ell >= 2.0
+    ell_plot = ell[mask]
+    prefactor = 1 #ell_plot * (ell_plot + 1.0) / (2.0 * np.pi)
+    dl_tt = cl_tt[mask] * prefactor
+
+    out_path = os.path.abspath(out_path)
+    parent = os.path.dirname(out_path)
+    if parent:
+        os.makedirs(parent, exist_ok=True)
+
+    apply_plot_params()
+    fig, ax = plt.subplots(figsize=(7.5, 4.8))
+    ax.plot(ell_plot, dl_tt, lw=1.8)
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlabel("ell")
+    ax.set_ylabel("ell(ell+1) C_ell^TT / (2pi) [muK^2]")
+    ax.set_title(title)
+    ax.grid(True, alpha=0.25)
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=180)
+    plt.close(fig)
+    return out_path
+
+
 if __name__ == "__main__":
     out_paths = save_planck2018_cltt_bundle()
+    plot_path = plot_cltt_ell_prefactor(
+        cltt,
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "cl_tt_fiducial_ell_prefactor.png"),
+    )
     for p in out_paths:
         print(p)
+    print(plot_path)

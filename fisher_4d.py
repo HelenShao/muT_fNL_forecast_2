@@ -7,7 +7,7 @@ Run from this directory:
     python3 fisher_4d.py
 
 Default output file (override with ``--output``):
-    SPECTER_fNL_4d_forecasts.txt
+    cmbs4/results/forecast_tables/SPECTER_fNL_4d_forecasts.txt
 """
 
 from __future__ import annotations
@@ -27,6 +27,7 @@ try:
         fisher_1d_fnl_only,
         fisher_muT_general,
     )
+    from .output_paths import ensure_dir, forecast_tables_dir
 except ImportError:
     from fisher_matrix import (
         AS_FID_LEGACY,
@@ -36,6 +37,7 @@ except ImportError:
         fisher_1d_fnl_only,
         fisher_muT_general,
     )
+    from output_paths import ensure_dir, forecast_tables_dir
 
 
 def marginal_corr(cov: np.ndarray, i: int, j: int) -> float:
@@ -176,8 +178,11 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument(
         "--output",
         type=Path,
-        default=Path(__file__).resolve().parent / "SPECTER_fNL_4d_forecasts.txt",
-        help="Path for the forecast table (default: SPECTER_fNL_4d_forecasts.txt next to this script).",
+        default=None,
+        help=(
+            "Path for the forecast table (default: cmbs4/results/forecast_tables/"
+            "SPECTER_fNL_4d_forecasts.txt)."
+        ),
     )
     p.add_argument(
         "--fwhm-deg",
@@ -219,6 +224,9 @@ def main(argv: list[str] | None = None) -> None:
         help="Use analytic b and db/dk_D,f (default: numerical b and finite differences).",
     )
     args = p.parse_args(argv)
+
+    if args.output is None:
+        args.output = ensure_dir(forecast_tables_dir()) / "SPECTER_fNL_4d_forecasts.txt"
 
     fnl_all = (0.0, 1.0, 5.0, 12_500.0, 25_000.0)
     sigma_k_Df: float | None

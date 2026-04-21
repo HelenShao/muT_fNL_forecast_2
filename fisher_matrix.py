@@ -10,6 +10,7 @@ documented in module comments -- diagonal multipoles would add
 
 from __future__ import annotations
 
+import math
 import warnings
 from dataclasses import dataclass
 from typing import Any
@@ -27,11 +28,17 @@ try:
     )
     from .spectra import (
         AS_FID_LEGACY,
+        AS_FID_PLANCK2018,
         SIGMA_AS_PLANCK2018,
         Cl_TT,
+        Cl_muT,
+        Cl_mu_mu_gaussian_PZ,
         T_muT_ell,
+        cl_tt_on_ell_grid,
         dT_muT_ell_dkdf,
+        load_ClTT_planck18,
         sigma2_muT_hat,
+        sigma2_muT_hat_full,
     )
 except ImportError:
     from beam import N_mu_mu, W_MU_INV_PIXIE, W_MU_INV_SPECTER, ell_max_from_fwhm_deg
@@ -44,12 +51,24 @@ except ImportError:
     )
     from spectra import (
         AS_FID_LEGACY,
+        AS_FID_PLANCK2018,
         SIGMA_AS_PLANCK2018,
         Cl_TT,
+        Cl_muT,
+        Cl_mu_mu_gaussian_PZ,
         T_muT_ell,
+        cl_tt_on_ell_grid,
         dT_muT_ell_dkdf,
+        load_ClTT_planck18,
         sigma2_muT_hat,
+        sigma2_muT_hat_full,
     )
+
+
+# Band-power variance models 
+VARIANCE_PZ_INSTRUMENTAL_APPROX = "pz_instrumental_approx"
+VARIANCE_FULL_GAUSSIAN_CV = "full_gaussian_cv"
+VARIANCE_FULL_GAUSSIAN_NOISY = "full_gaussian_noisy"
 
 
 @dataclass
@@ -57,6 +76,7 @@ class FisherMuTResult:
     """Fisher matrices and marginalized uncertainties."""
 
     F_data: np.ndarray
+    F_cov: np.ndarray
     F_total: np.ndarray
     param_names: tuple[str, ...]
     sigma_fnl_unmarg: float
@@ -71,6 +91,66 @@ class FisherMuTResult:
     sigma_k_Df_marg: float | None = None
 
 
+def fisher_cov_term_diagonal(
+    var: np.ndarray,
+    dsigma2: dict[str, np.ndarray],
+    param_names: tuple[str, ...],
+):
+    n = len(param_names)
+    F = np.zeros((n, n), dtype=float)
+    inv_v4 = 1.0 / (var**2)
+    for i, pi in enumerate(param_names):
+        if pi not in dsigma2:
+            continue
+        di = np.asarray(dsigma2[pi], dtype=float)
+        for j, pj in enumerate(param_names):
+            if pj not in dsigma2:
+                continue
+            dj = np.asarray(dsigma2[pj], dtype=float)
+            F[i, j] = 0.5 * float(np.sum(inv_v4 * di * dj))
+    return F
+
+
+def _muT_bandpower_variance(
+    ell: np.ndarray,
+    variance_mode: str,
+    *,
+    cl_tt: np.ndarray,
+    fwhm_deg: float,
+    w_mu_inv: float,
+    fnl_fid: float,
+    b_arr: np.ndarray,
+    As_fid: float,
+    k_D_i: float,
+    k_D_f: float,
+    ns_fid: float,
+    k_p: float,
+    cl_tt_noise: np.ndarray | float,
+):
+    if variance_mode == VARIANCE_PZ_INSTRUMENTAL_APPROX:
+        n_mumu = N_mu_mu(ell, fwhm_deg, w_mu_inv=w_mu_inv)
+        return sigma2_muT_hat(ell, cl_tt, n_mumu)
+    cl_mut = Cl_muT(ell, fnl_fid, b_arr, As_fid, k_D_i, k_D_f)
+    cl_mumu_sig = Cl_mu_mu_gaussian_PZ(ell, k_D_f=k_D_f, ns=ns_fid, k_p=k_p)
+    if variance_mode == VARIANCE_FULL_GAUSSIAN_CV:
+        n_mumu = np.zeros_like(ell, dtype=float)
+    elif variance_mode == VARIANCE_FULL_GAUSSIAN_NOISY:
+        n_mumu = N_mu_mu(ell, fwhm_deg, w_mu_inv=w_mu_inv)
+    else:
+        raise ValueError(
+            f"variance_mode must be one of {VARIANCE_PZ_INSTRUMENTAL_APPROX!r}, "
+            f"{VARIANCE_FULL_GAUSSIAN_CV!r}, {VARIANCE_FULL_GAUSSIAN_NOISY!r}; got {variance_mode!r}"
+        )
+    return sigma2_muT_hat_full(
+        ell,
+        cl_tt,
+        cl_tt_noise=cl_tt_noise,
+        cl_mumu_signal=cl_mumu_sig,
+        cl_mumu_noise=n_mumu,
+        cl_mut=cl_mut,
+    )
+
+
 def _b_and_db(
     ell: np.ndarray,
     ns_fid,
@@ -80,8 +160,20 @@ def _b_and_db(
     dns_step,
     use_b_analytic: bool,
     b_kw: dict[str, Any],
+    b_override: float | None = None,
+    *,
+    b_db_prec: tuple[np.ndarray, np.ndarray] | None = None,
 ) -> tuple[np.ndarray, np.ndarray | float]:
     ell_i = ell.astype(int)
+    if b_db_prec is not None:
+        b_arr, db_arr = b_db_prec
+        if b_arr.shape != ell.shape or db_arr.shape != ell.shape:
+            raise ValueError("b_db_prec arrays must match ell shape")
+        return b_arr, db_arr
+    if b_override is not None:
+        b = np.full_like(ell, float(b_override), dtype=float)
+        db = np.zeros_like(ell, dtype=float)
+        return b, db
     if use_b_analytic:
         b0 = b_analytic(ns_fid, k_D_i, k_D_f, k_p)
         db_dns = 0.5 * np.log((k_D_i * k_D_f) / (4.0 * k_p**2))
@@ -114,6 +206,8 @@ def _Cl_derivative_matrix(
     As_fid,
     include_As: bool,
     include_k_Df: bool,
+    b_override: float | None = None,
+    b_db_prec: tuple[np.ndarray, np.ndarray] | None = None,
 ) -> tuple[np.ndarray, tuple[str, ...]]:
     r"""
     Rows = multipoles, columns = (dC_l^{\mu T}/d\theta_i).
@@ -126,7 +220,16 @@ def _Cl_derivative_matrix(
     """
     ell_i = ell.astype(int)
     b, db_or_scalar = _b_and_db(
-        ell, ns_fid, k_D_i, k_D_f, k_p, dns_step, use_b_analytic, b_kw
+        ell,
+        ns_fid,
+        k_D_i,
+        k_D_f,
+        k_p,
+        dns_step,
+        use_b_analytic,
+        b_kw,
+        b_override=b_override,
+        b_db_prec=b_db_prec,
     )
     T = T_muT_ell(ell, As_fid, k_D_i, k_D_f)
 
@@ -143,7 +246,9 @@ def _Cl_derivative_matrix(
 
     if include_k_Df:
         dT_dk = dT_muT_ell_dkdf(ell, As_fid, k_D_i, k_D_f)
-        if use_b_analytic:
+        if b_override is not None:
+            db_dk_arr = np.zeros_like(ell, dtype=float)
+        elif use_b_analytic:
             db_dk = db_dkdf_analytic(ns_fid, k_D_f)
             db_dk_arr = np.full_like(ell, db_dk, dtype=float)
         else:
@@ -188,18 +293,37 @@ def fisher_muT_general(
     include_k_Df: bool = False,
     As_fid: float = AS_FID_LEGACY,
     use_b_analytic: bool = False,
+    b_override: float | None = None,
     b_integral_kw: dict[str, Any] | None = None,
     variance_at_fiducial: bool = True,
+    cl_tt_txt_dir: str | None = None,
+    variance_mode: str = VARIANCE_PZ_INSTRUMENTAL_APPROX,
+    cl_tt_noise: np.ndarray | float = 0.0,
+    include_covariance_derivative: bool = False,
+    dsigma2_wrt: dict[str, np.ndarray] | None = None,
+    b_db_prec: tuple[np.ndarray, np.ndarray] | None = None,
 ) -> FisherMuTResult:
     r"""
-    Gaussian Fisher for muT band powers (mean term only; Tier A variance).
+    Gaussian Fisher for muT band powers.
 
-        F_ij = sigma_ell sigma_ell^{-2} (dC_l/d\theta_i)(dC_l/d\theta_j)  +  priors
+    **Mean term:** :math:`F^{\rm data}_{ij} = \sum_\ell \sigma_\ell^{-2}
+    (\partial C_\ell^{\mu T}/\partial\theta_i)(\partial C_\ell^{\mu T}/\partial\theta_j)` + priors.
 
-    with sigma_ell^2 \simeq C_l^{TT} C_l^{\mu\mu,N}/(2l+1). Uses ``Cl_TT(ell, As_fid)`` for sigma_ell^2 when
-    ``variance_at_fiducial`` is True (fixed noise at fiducial A_s).
+    **Variance:** ``variance_mode`` selects PZ instrumental approximation
+    (:math:`\sigma_\ell^2 \simeq C_\ell^{TT} C_\ell^{\mu\mu,N}/(2\ell+1)`) or the full Gaussian
+    band-power form via ``spectra.sigma2_muT_hat_full`` (CV-limited or with instrumental
+    :math:`C_\ell^{\mu\mu,N}`).
+
+    **Covariance derivative term:** if ``include_covariance_derivative`` and ``dsigma2_wrt`` are set,
+    adds ``fisher_cov_term_diagonal`` to ``F_total`` (diagonal :math:`C` in :math:`\ell`).
 
     ----------
+    cl_tt_txt_dir :
+        If not ``None``, load CAMB ``C_l^{TT}`` from text files in this directory
+        (see ``planck_cosmology.save_planck2018_cltt_bundle`` / ``spectra.load_ClTT_planck18``).
+        Values are assumed to already be in the same dimensionless normalization used by
+        ``spectra.Cl_TT`` and are passed directly to ``sigma2_muT_hat``.
+
     sigma_As_prior :
         If not None, add ``1/sigma^2`` to the A_s diagonal of ``F_total``. Use
         `SIGMA_AS_PLANCK2018` (Planck18 sigma(ln(10^10 A_s)) = 0.014)
@@ -217,16 +341,23 @@ def fisher_muT_general(
         Fiducial primordial amplitude at the pivot used in the PZ template (matches legacy TT scale when default).
     w_mu_inv :
         ``w_\mu^{-1}`` in ``C_l^{\mu\mu,N}`` (see ``beam.N_mu_mu``). Use ``beam.W_MU_INV_PIXIE`` or
-        ``beam.W_MU_INV_SPECTER`` for PIXIE vs SPECTER.
+        ``beam.W_MU_INV_SPECTER`` for PIXIE vs SPECTER. For ``full_gaussian_cv``, this should be ``0``.
+    b_override :
+        If not ``None``, fix ``b`` to this constant at all multipoles and set
+        ``\partial b / \partial n_s = 0`` (and ``\partial b / \partial k_{D,f} = 0`` if included).
+        This is useful for fixed-``b`` sensitivity tests.
     variance_at_fiducial :
-        Tier A (default): evaluate sigma_ell^2 at ``As_fid`` only. Tier B (optional future): add
-        (1/2) sigma_ell sigma_ell^{-4} (dsigma_ell^2/d\theta_i)(dsigma_ell^2/d\theta_j) when ``variance_at_fiducial`` is False --
-        not implemented yet; throws warning and uses fiducial sigma_ell^2.
+    variance_mode :
+        ``pz_instrumental_approx`` (default), ``full_gaussian_cv``, or ``full_gaussian_noisy``.
+    cl_tt_noise :
+        :math:`N_\ell^{TT}` for ``sigma2_muT_hat_full`` (scalar or per-:math:`\ell`).
+    dsigma2_wrt :
+        Maps parameter name to :math:`\partial\sigma_\ell^2/\partial\theta` (length ``len(ell)``).
     """
-    if not variance_at_fiducial:
+    if not variance_at_fiducial and not include_covariance_derivative:
         warnings.warn(
-            "Tier B Fisher (derivative of covariance w.r.t. parameters) is not implemented; "
-            "using fiducial sigma_ell^2 as in Tier A.",
+            "variance_at_fiducial=False without include_covariance_derivative: still using "
+            "fiducial sigma_ell^2 only (legacy Tier A).",
             UserWarning,
             stacklevel=2,
         )
@@ -235,9 +366,39 @@ def fisher_muT_general(
     if include_As is None:
         include_As = sigma_As_prior is not None
 
-    cl_tt = Cl_TT(ell, As_fid)
-    n_mumu = N_mu_mu(ell, fwhm_deg, w_mu_inv=w_mu_inv)
-    var = sigma2_muT_hat(ell, cl_tt, n_mumu)
+    if cl_tt_txt_dir is not None:
+        _bundle = load_ClTT_planck18(cl_tt_txt_dir)
+        cl_tt = cl_tt_on_ell_grid(_bundle["fiducial"], ell)
+    else:
+        cl_tt = Cl_TT(ell, As_fid)
+
+    b_arr, _ = _b_and_db(
+        ell,
+        ns_fid,
+        k_D_i,
+        k_D_f,
+        k_p,
+        dns_step,
+        use_b_analytic,
+        b_kw,
+        b_override=b_override,
+        b_db_prec=b_db_prec,
+    )
+    var = _muT_bandpower_variance(
+        ell,
+        variance_mode,
+        cl_tt=cl_tt,
+        fwhm_deg=fwhm_deg,
+        w_mu_inv=w_mu_inv,
+        fnl_fid=fnl_fid,
+        b_arr=b_arr,
+        As_fid=As_fid,
+        k_D_i=k_D_i,
+        k_D_f=k_D_f,
+        ns_fid=ns_fid,
+        k_p=k_p,
+        cl_tt_noise=cl_tt_noise,
+    )
     inv_var = 1.0 / var
 
     K, param_names = _Cl_derivative_matrix(
@@ -254,11 +415,18 @@ def fisher_muT_general(
         As_fid=As_fid,
         include_As=include_As,
         include_k_Df=include_k_Df,
+        b_override=b_override,
+        b_db_prec=b_db_prec,
     )
 
     F_data = (K * inv_var[:, None]).T @ K
 
-    F_total = F_data.copy()
+    if include_covariance_derivative and dsigma2_wrt:
+        F_cov = fisher_cov_term_diagonal(var, dsigma2_wrt, param_names)
+    else:
+        F_cov = np.zeros_like(F_data)
+
+    F_total = F_data + F_cov
     idx = {n: i for i, n in enumerate(param_names)}
     if sigma_ns_prior is not None:
         F_total[idx["ns"], idx["ns"]] += 1.0 / (sigma_ns_prior**2)
@@ -267,13 +435,24 @@ def fisher_muT_general(
     if "k_Df" in idx and sigma_k_Df_prior is not None:
         F_total[idx["k_Df"], idx["k_Df"]] += 1.0 / (sigma_k_Df_prior**2)
 
-    cov = np.linalg.inv(F_total)
+    try:
+        cov = np.linalg.inv(F_total)
+    except np.linalg.LinAlgError:
+        cov = np.linalg.pinv(F_total)
+        warnings.warn(
+            "F_total is singular; using pseudoinverse for marginal uncertainties.",
+            UserWarning,
+            stacklevel=2,
+        )
 
     def _sigma_u(j: int) -> float:
         return 1.0 / np.sqrt(F_data[j, j]) if F_data[j, j] > 0 else np.inf
 
     def _sigma_m(j: int) -> float:
-        return float(np.sqrt(cov[j, j]))
+        v = float(cov[j, j])
+        if not math.isfinite(v) or v <= 0.0:
+            return float("inf")
+        return float(np.sqrt(v))
 
     sigma_fnl_u = _sigma_u(idx["fnl"])
     sigma_ns_u = _sigma_u(idx["ns"])
@@ -302,6 +481,7 @@ def fisher_muT_general(
     # pack results into dataclass
     return FisherMuTResult(
         F_data=F_data,
+        F_cov=F_cov,
         F_total=F_total,
         param_names=param_names,
         sigma_fnl_unmarg=sigma_fnl_u,
@@ -330,16 +510,25 @@ def fisher_1d_fnl_only(
     use_b_analytic: bool = True,
     b_integral_kw: dict[str, Any] | None = None,
     b_override: float | None = None,
+    cl_tt_txt_dir: str | None = None,
+    variance_mode: str = VARIANCE_PZ_INSTRUMENTAL_APPROX,
+    fnl_fid_for_variance: float = 0.0,
+    cl_tt_noise: np.ndarray | float = 0.0,
 ) -> float:
-    """Single-parameter Fisher F = sigma_ell (dC/df_NL)^2/sigma_ell^2; sigma_ell^2 uses ``Cl_TT(As_fid)``.
+    """Single-parameter Fisher F = sum_ell (dC/df_NL)^2/sigma_ell^2.
+
+    ``fnl_fid_for_variance`` sets :math:`C_\ell^{\mu T}` inside :math:`\sigma_\ell^2` when using
+    ``full_gaussian_*`` modes (ignored for ``pz_instrumental_approx`` in practice).
 
     If ``b_override`` is set (e.g. ``1.0`` for a simplified tutorial comparison), use constant
     `b` at every multipole and ignore ``use_b_analytic`` / numerical ``b_ell_ns``.
     """
     b_kw = dict(b_integral_kw or {})
-    cl_tt = Cl_TT(ell, As_fid)
-    n_mumu = N_mu_mu(ell, fwhm_deg, w_mu_inv=w_mu_inv)
-    var = sigma2_muT_hat(ell, cl_tt, n_mumu)
+    if cl_tt_txt_dir is not None:
+        _bundle = load_ClTT_planck18(cl_tt_txt_dir)
+        cl_tt = cl_tt_on_ell_grid(_bundle["fiducial"], ell)
+    else:
+        cl_tt = Cl_TT(ell, As_fid)
     ell_i = ell.astype(int)
     T = T_muT_ell(ell, As_fid, k_D_i, k_D_f)
     if b_override is not None:
@@ -351,7 +540,21 @@ def fisher_1d_fnl_only(
         b = np.array(
             [b_ell_ns(int(l), ns_fid, k_D_i=k_D_i, k_D_f=k_D_f, k_p=k_p, **b_kw) for l in ell_i]
         )
-    print("b=", b*(ell*(ell+1)))
+    var = _muT_bandpower_variance(
+        ell,
+        variance_mode,
+        cl_tt=cl_tt,
+        fwhm_deg=fwhm_deg,
+        w_mu_inv=w_mu_inv,
+        fnl_fid=fnl_fid_for_variance,
+        b_arr=b,
+        As_fid=As_fid,
+        k_D_i=k_D_i,
+        k_D_f=k_D_f,
+        ns_fid=ns_fid,
+        k_p=k_p,
+        cl_tt_noise=cl_tt_noise,
+    )
     K_fnl = T * b
     return float(np.sum(K_fnl**2 / var))
 
@@ -366,8 +569,13 @@ __all__ = [
     "FisherMuTResult",
     "SIGMA_AS_PLANCK2018",
     "AS_FID_LEGACY",
+    "AS_FID_PLANCK2018",
     "W_MU_INV_PIXIE",
     "W_MU_INV_SPECTER",
+    "VARIANCE_PZ_INSTRUMENTAL_APPROX",
+    "VARIANCE_FULL_GAUSSIAN_CV",
+    "VARIANCE_FULL_GAUSSIAN_NOISY",
+    "fisher_cov_term_diagonal",
     "fisher_muT_general",
     "fisher_1d_fnl_only",
     "default_ell_grid",

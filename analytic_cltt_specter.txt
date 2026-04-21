@@ -1,0 +1,17 @@
+lmax= 84.32578130817491
+muT Fisher forecast -- 3 parameters (f_NL, n_s, A_s)
+  l range: 2...85, FWHM = 1.6^\circ, n_s = 0.965
+  mu autospectrum noise: w_mu^-1 = 4.000000e-18 (SPECTER; see beam.N_mu_mu)
+  A_s fid (Delta_R^2 at pivot): 2.387324e-09
+  C_l^TT for noise: analytic Sachs-Wolfe template (spectra.Cl_TT)
+  Prior sigma(n_s) = 0.004
+  Prior sigma(A_s) = 2.940000e-11 (Planck 2018 order-of-magnitude; see spectra.py)
+  numerical b(l, n_s), dns_step = 5e-5
+
+    f_NL fid     sigma(f_NL)      sigma(n_s)      sigma(A_s)  corr(f_NL,n_s)  corr(f_NL,A_s)
+--------------------------------------------------------------------------------------------------
+           0    2.887536e+02    4.000000e-03    2.940000e-11          0.0000         -0.0001
+           1    2.887536e+02    4.000000e-03    2.940000e-11         -0.0002         -0.0001
+       12500    7.653278e+02    4.000000e-03    2.940000e-11         -0.9261         -0.0000
+       25000    1.446641e+03    4.000000e-03    2.940000e-11         -0.9799         -0.0000
+

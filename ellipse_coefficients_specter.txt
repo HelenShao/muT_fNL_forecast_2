@@ -1,0 +1,74 @@
+
+=== Ellipse coefficients (specter) ===
+f_NL^fid = 25000,  n_s^fid = 0.965,  Δχ² (68% joint 2D) = 2.30414746544
+X = f_NL - f_NL^fid,  Y = n_s - n_s^fid
+Contour:  a*X^2 + b*X*Y + c*Y^2 = Δχ²  with (a,b,c) = (Σ^-1_11, 2Σ^-1_12, Σ^-1_22)
+
+--- c_f = 100 ---
+  Σ (marginal cov fnl,ns):
+[[ 2.90321153e+08 -5.67012108e+00]
+ [-5.67012108e+00  1.60000000e-05]]
+  Σ^-1 (precision):
+[[3.46846760e-09 1.22916445e-03]
+ [1.22916445e-03 6.29355945e+04]]
+  a = 3.468467598905e-09
+  b = 2.458328907034e-03  (coefficient of X*Y; 2*Σ^-1_12)
+  c = 6.293559446215e+04
+  check: Z = a*X^2 + b*X*Y + c*Y^2  →  level = 2.30414746544
+--- c_f = 251.189 ---
+  Σ (marginal cov fnl,ns):
+[[ 1.16842321e+08 -5.67012094e+00]
+ [-5.67012094e+00  1.60000000e-05]]
+  Σ^-1 (precision):
+[[8.70830349e-09 3.08607087e-03]
+ [3.08607087e-03 6.35936497e+04]]
+  a = 8.708303487085e-09
+  b = 6.172141748527e-03  (coefficient of X*Y; 2*Σ^-1_12)
+  c = 6.359364973806e+04
+  check: Z = a*X^2 + b*X*Y + c*Y^2  →  level = 2.30414746544
+--- c_f = 630.957 ---
+  Σ (marginal cov fnl,ns):
+[[ 4.77791497e+07 -5.67012057e+00]
+ [-5.67012057e+00  1.59999999e-05]]
+  Σ^-1 (precision):
+[[2.18484878e-08 7.74272255e-03]
+ [7.74272255e-03 6.52438859e+04]]
+  a = 2.184848782331e-08
+  b = 1.548544510162e-02  (coefficient of X*Y; 2*Σ^-1_12)
+  c = 6.524388594254e+04
+  check: Z = a*X^2 + b*X*Y + c*Y^2  →  level = 2.30414746544
+--- c_f = 1584.89 ---
+  Σ (marginal cov fnl,ns):
+[[ 2.02845931e+07 -5.67011957e+00]
+ [-5.67011957e+00  1.59999996e-05]]
+  Σ^-1 (precision):
+[[5.47189572e-08 1.93914399e-02]
+ [1.93914399e-02 6.93719884e+04]]
+  a = 5.471895722307e-08
+  b = 3.878287985801e-02  (coefficient of X*Y; 2*Σ^-1_12)
+  c = 6.937198838363e+04
+  check: Z = a*X^2 + b*X*Y + c*Y^2  →  level = 2.30414746544
+--- c_f = 3981.07 ---
+  Σ (marginal cov fnl,ns):
+[[ 9.33878130e+06 -5.67011658e+00]
+ [-5.67011658e+00  1.59999972e-05]]
+  Σ^-1 (precision):
+[[1.36436964e-07 4.83508516e-02]
+ [4.83508516e-02 7.96346992e+04]]
+  a = 1.364369637379e-07
+  b = 9.670170319127e-02  (coefficient of X*Y; 2*Σ^-1_12)
+  c = 7.963469921368e+04
+  check: Z = a*X^2 + b*X*Y + c*Y^2  →  level = 2.30414746544
+--- c_f = 10000 ---
+  Σ (marginal cov fnl,ns):
+[[ 4.98109682e+06 -5.67010631e+00]
+ [-5.67010631e+00  1.59999831e-05]]
+  Σ^-1 (precision):
+[[3.36506239e-07 1.19251760e-01]
+ [1.19251760e-01 1.04760746e+05]]
+  a = 3.365062392424e-07
+  b = 2.385035209790e-01  (coefficient of X*Y; 2*Σ^-1_12)
+  c = 1.047607457626e+05
+  check: Z = a*X^2 + b*X*Y + c*Y^2  →  level = 2.30414746544
+/Users/Shao/Documents/harvard-docs/cora-cosmology/cmb-spectral-distortions/Forecasts-on-fNL-through-CMB-Spectral-Distortions/cmbs4/results/muT_fNL_runs/section4_foregrounds/analytic_cltt_analytic_b/figures/fnl_ns_cf_gradient_specter.pdf
+/Users/Shao/Documents/harvard-docs/cora-cosmology/cmb-spectral-distortions/Forecasts-on-fNL-through-CMB-Spectral-Distortions/cmbs4/results/muT_fNL_runs/section4_foregrounds/analytic_cltt_analytic_b/figures/fnl_ns_cf_gradient_specter.png

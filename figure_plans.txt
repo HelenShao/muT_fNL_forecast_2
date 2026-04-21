@@ -1,0 +1,80 @@
+The following sections outline the to-do list of figures to make, fisher forecasts to compute, and other results to report and save. read them and understand the tests. ask questions to clarify ambiguous statements. confirm your understanding before implementing any code. when you understand, build a plan to implement these tests in a clear, organized, and logical manner. make sure to stay organized with the resulting text files /figures that you save, as well as the scripts that were used to generate them for easy reproducibility in the future! 
+
+first, read and understand this codebase (/Users/Shao/Documents/harvard-docs/cora-cosmology/cmb-spectral-distortions/pajer-zaldarriaga/muT_fNL_forecast_2) and the tests that have already been done to make an inventory of what has been done. note that even if some of the items on to-do list have already been performed, we will re-do them as a consistency check and for reproducbility in a more organized manner.
+
+Notes
+    - PZ paper refers to pajer+zaldarriaga's paper here: /Users/Shao/Documents/harvard-docs/cora-cosmology/cmb-spectral-distortions/pajer-zaldarriaga/pajer-zaldarriaga.tex
+    - experiment sensitivity refers to mu detection sensitivies and instrumental configuration of given experiment, which are mentioned in PZ paper and explained in more detail in the experiment papers for pIXIE and SPECTER located at:
+        - PIXIE: /Users/Shao/Documents/harvard-docs/cora-cosmology/cmb-spectral-distortions/PIXIE
+        - SPECTER: /Users/Shao/Documents/harvard-docs/cora-cosmology/cmb-spectral-distortions/SPECTER
+    - cabass paper and figure files located at: /Users/Shao/Documents/harvard-docs/cora-cosmology/cmb-spectral-distortions/cabass-pajer
+    - unmarg refers to unmarginalized constraint, marg refers to marginalized constraints
+    - for making contour plots using cosmic fish, see code here: /Users/Shao/Documents/harvard-docs/cora-cosmology/cmb-spectral-distortions/pajer-zaldarriaga/muT_fNL_forecast_2/cosmicfish_contours.py
+    - for all plots, make sure to use these plotting parameters: /Users/Shao/Documents/harvard-docs/cora-cosmology/cmb-spectral-distortions/pajer-zaldarriaga/muT_fNL_forecast_2/plot_params.py
+    
+Considerations
+    - what is the best way to save and organize these scripts/figures into separate folders for each section/test?
+
+helpful papers and references
+    - /Users/Shao/Documents/harvard-docs/cora-cosmology/cmb-spectral-distortions/chluba-muCross-fg
+    - /Users/Shao/Documents/harvard-docs/cora-cosmology/cmb-spectral-distortions/chluba-science-with-mu
+    - /Users/Shao/Documents/harvard-docs/cora-cosmology/cmb-spectral-distortions/chluba-mu-evoln
+    - /Users/Shao/Documents/harvard-docs/cora-cosmology/cmb-spectral-distortions/azzoni_fg_likelihood
+    - /Users/Shao/Documents/harvard-docs/cora-cosmology/cmb-spectral-distortions/ganc-local-fNL 
+    - /Users/Shao/Documents/harvard-docs/cora-cosmology/cmb-spectral-distortions/future_cmb_distortions
+    - /Users/Shao/Documents/harvard-docs/cora-cosmology/cmb-spectral-distortions/planck-fnl
+    - /Users/Shao/Documents/harvard-docs/cora-cosmology/cmb-spectral-distortions/remazeilles-muT-fg
+    - /Users/Shao/Documents/harvard-docs/cora-cosmology/cmb-spectral-distortions/simgbig-cosmo (for figure inspiration only)
+    - /Users/Shao/Documents/harvard-docs/cora-cosmology/cmb-spectral-distortions/patchy-reion (for adapting methods on marginalizing over foreground parameters by varying levels of foreground cleaning/removal)
+    - /Users/Shao/Documents/harvard-docs/cora-cosmology/cmb-spectral-distortions/abitol-fg-mu
+    - papers on techniques of fisher forecasts and statistical methods in astronomy are located in subdirs of this folder: /Users/Shao/Documents/harvard-docs/cora-cosmology/cmb-spectral-distortions/stat-methods-astro
+        - read them thoroughly to get a masterful understanding of how to correctly analyze and use fisher forecasts in astronomy, including tricks and tips. then use this information to guide the implementation of the tests below and when answering my questions.
+
+1. Baseline results (reproducing PZ paper)
+    a. Cosmic variance limited constraints on fnl (1d fisher, not varying any other parameter)
+        i. cosmic variance limited constraints on ns and fnl (move to section 3)
+    b. constraints on fnl with PIXIE sensitivies and instrumental configuration
+    c. constraints on fnl with SPECTER sensitivies and instrumental configuration (for comparsion to 1b)
+    e. Constraints on fnl with PIXIE sensitivies and instrumental configuration for different fiducial values of b (b=10, b=100). Should recover sigma(fnl) value of ~100 as reported in PZ paper 
+        i. find explanation and paper references that explain what models can predict such values of b and what these models physically represent. a good starting point is in the PZ paper results discussion
+    ** do 1a-1e using analytic ClTT and the analytic limit of b. then redo them for CAMB clTT and numerical calculation of b. save results of both type to separate subdirectories **
+
+2. Reproducing cabass:
+    a. sigma(fnl) vs lmax. see fisher forecast method and results in cabass paper
+        i. in plot, add vertical lines indicating lmax of PIXIE and SPECTER, as well as the lmax where unmarg sigma(fnl) = marg sigma(fnl)
+        ii. add explanation/analysis of this results, similar to cabass paper, explaining that using information up to certain ell prevents b from degrading the constraints on fnl
+        iii. explore 2.a.ii in 2d or 3d fisher case (when we marginalize over ns - see section 3) and when we marginalize over foreground parameters (see section 4)
+    b. repeat 2.a for SPECTER sensitivity
+
+3. Extendion: vary ns and As cosmological parameters    
+    a. compute sigma(ns) and sigma(fnl) for PIXIE and SPECTER when marginalizing over ns and As
+    b. How do results from sections 1 and 2 change when marginalizing over ns and As?
+    c. confirm that As and fnl dont have degeneracies. (answer this question hypothetically: what are some other cosmological parameters i can vary for this extension?)
+    d. try variations of figures that visualize **clearly** the different constraints on fnl for different fiducial values when varying ns and As. for instance, a plot similar to this figure: /Users/Shao/Documents/harvard-docs/cora-cosmology/cmb-spectral-distortions/simgbig-cosmo/s8h0_comparison_wide.pdf used in this paper: /Users/Shao/Documents/harvard-docs/cora-cosmology/cmb-spectral-distortions/simgbig-cosmo
+    e. make a table in /Users/Shao/Documents/harvard-docs/cora-cosmology/cmb-spectral-distortions/Forecasts-on-fNL-through-CMB-Spectral-Distortions/cmbs4/main.tex to list the results from this section, such as for various fiducial fnl values. 
+    f. since ns constraints are mostly coming from prior information, vary the prior on ns to see how prior-dependent effects change fnl constraints.
+
+4. extension II: marginalize over foreground Cl parameters
+    We will continue marginalizing over ns in this extension. To account for noise introduced by foregrounds, we will include Cl^DD (for dust autospectrum) using a model of the power spectrum as a power law with parameters that dictate tilt (alpha_D) and amplitude (A_D). see the power law used in this paper: /Users/Shao/Documents/harvard-docs/cora-cosmology/cmb-spectral-distortions/azzoni_fg_likelihood. to marginalize over the foreground parameters, we need to include an additional term in the fisher calculation which are the derivatives of the covariance in the likelihood function: F_{ij}=\frac{1}{2}Tr\left[ C^{-1}C_{,i}C^{-1}C_{,j}+C^{-1}M_{ij}\right] where C is the covariance 
+        - question: how to compute C in the case of marginalizing over multiple parameters? is it still scalar?
+    a. fix best fit values of A_D and alpha_D from either SPECTER paper or /Users/Shao/Documents/harvard-docs/cora-cosmology/cmb-spectral-distortions/azzoni_fg_likelihood or /Users/Shao/Documents/harvard-docs/cora-cosmology/cmb-spectral-distortions/remazeilles-muT-fg/mu_simulation.tex (which one do you think we should use?)
+    b. treat A_D and alpha_D as free nuisance parameters to marginalize over. to do this, we will assume that the foregrounds have already been cleaned to some degree, dictated by the paramter cf which we will choose different values for before running the fisher constraint (see line 587 of /Users/Shao/Documents/harvard-docs/cora-cosmology/cmb-spectral-distortions/patchy-reion/paper_apj_ref.tex. they use a different model of the power law but the general idea is what i want to adapting). calulate fisher forecasts marginalizing over A_D and alpha_D for varying cf. use 4.a to determine fiducial values of A_D and alpha_D. the goal is to show whether signal-to-noise of the cross-correlation does not vary substantially for different values of $c_f$ in this range.
+    c. make a figure showing 2d marginalized contours of ns and fnl with a gradient colorbar on cf
+        i.  do this separately for pixie and specter
+        ii. investigate this question: how do results improve for specter, which is supposed to have better marginalization over foreground spectral energy density?
+        iii. compare results to the forecasts on fnl obtained in 3 where we did not marginalize over foregrounds
+        iv. compre sigma(fnl) for marginalized and unmarginalized over foregrounds for SPECTER and PIXIE. this will inform us of whether marginalizing over foregrounds severely degrades constraints. 
+        v. investigate whether there is an lmax at which marginalizing over foregrounds no longer degrades fnl constraints, similar to 2a. 
+    d. make triangle plot using cosmicfish showing the various contours. do this for pixie and SPECTER overlayed
+    e. reproduce 2a when marginalizing over foreground parameters but since we are varying cf, this plot should include many lines and use a cmap gradient to color the lines according to cf value. this should look as continuous as possible in the color gradient of the lines. include a colorbar on cf value. does this make sense?
+
+5. Other calculations
+    a. compute signal to noise ratio, as done in PZ paper
+
+
+Research questions to answer using the results from above. we will discuss them in main.tex
+1. why are some parameters better constrained by Cl^muT than others, for instance ns seems to be entirely prior dependent despite showing up in ClTT and Cl^muT. yet fnl is much better constrained. 
+2. why do papers commonly use large fnl fiducial values (25000, 15000)? are there physical motivations for this usage, such as being predicted by certain inflation models?
+3. explain the physics behind the degeneracy between fnl and ns for different values of fnl. maybe it is related to maldacena's consistency relation which relates fnl and ns for single-field inflation models?
+4. compare our forecasts on local fnl to local fnl constraints from planck which are provided in this paper:  /Users/Shao/Documents/harvard-docs/cora-cosmology/cmb-spectral-distortions/planck-fnl 
+    

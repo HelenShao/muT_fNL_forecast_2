@@ -1,0 +1,16 @@
+muT Fisher forecast -- 3 parameters (f_NL, n_s, A_s)
+  l range: 2...85, FWHM = 1.6 deg, n_s = 0.965
+  mu autospectrum noise: w_mu^-1 = 4.000000e-18 (SPECTER)
+  A_s fid (Delta_R^2 at pivot): 2.100000e-09
+  C_l^TT for noise: CAMB from text files in /Users/Shao/Documents/harvard-docs/cora-cosmology/cmb-spectral-distortions/pajer-zaldarriaga/muT_fNL_forecast_2
+  Prior sigma(n_s) = 0.004
+  Prior sigma(A_s) = 2.940000e-11
+  numerical b(l, n_s), dns_step = 5e-5
+
+    f_NL_fid       sigma_fNL        sigma_ns        sigma_As     corr_fNL_ns     corr_fNL_As
+--------------------------------------------------------------------------------------------
+           0    5.186390e+02    4.000000e-03    2.940000e-11          0.0000         -0.0001
+           1    5.186390e+02    4.000000e-03    2.940000e-11         -0.0001         -0.0001
+       12500    8.782565e+02    4.000000e-03    2.940000e-11         -0.8070         -0.0000
+       25000    1.509430e+03    4.000000e-03    2.940000e-11         -0.9391         -0.0000
+

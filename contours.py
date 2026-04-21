@@ -23,9 +23,9 @@ To capture printed paths or logs to a text file, redirect stdout/stderr::
 
     python3 contours.py > contours_run.txt 2>&1
 
-Outputs PDFs under ``contours_variations/`` by default (override with ``--output-dir``).
-Use ``--specter`` for SPECTER ``w_mu_inv`` (see ``beam.W_MU_INV_SPECTER``), or run
-``run_specter_contours.py`` to write into ``SPECTER_results/contours/``.
+By default, PDFs are written under ``cmbs4/results/contours_pixie/`` (PIXIE) or
+``cmbs4/results/contours_specter/`` with ``--specter`` — see ``output_paths.py``.
+Override with ``--output-dir``. ``run_specter_contours.py`` runs this module with SPECTER output.
 """
 
 from __future__ import annotations
@@ -44,6 +44,12 @@ from fisher_matrix import (
     default_ell_grid,
     fisher_muT_general,
 )
+try:
+    from .output_paths import contours_pixie_dir, contours_specter_dir, ensure_dir
+    from .plot_params import apply_plot_params
+except ImportError:
+    from output_paths import contours_pixie_dir, contours_specter_dir, ensure_dir
+    from plot_params import apply_plot_params
 
 # Joint 68% / 95% / 99% \Delta\chi^2 for 2 Gaussian parameters
 DELTA_CHI2_LEVELS_2D = (2.30, 5.99, 9.21)
@@ -235,6 +241,7 @@ def variant_3d_ellipsoid_surfaces(
 def apply_publication_rc() -> None:
     import matplotlib as mpl
 
+    apply_plot_params()
     mpl.rcParams.update(
         {
             "figure.dpi": 120,
@@ -620,8 +627,11 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument(
         "--output-dir",
         type=Path,
-        default=Path(__file__).resolve().parent / "contours_variations",
-        help="Directory for PDF outputs.",
+        default=None,
+        help=(
+            "Directory for PDF outputs (default: cmbs4/results/contours_pixie, "
+            "or contours_specter with --specter)."
+        ),
     )
     p.add_argument(
         "--show",
@@ -638,8 +648,11 @@ def main(argv: list[str] | None = None) -> None:
     )
     args = p.parse_args(argv)
 
-    outdir = args.output_dir
-    outdir.mkdir(parents=True, exist_ok=True)
+    if args.output_dir is None:
+        outdir = contours_specter_dir() if args.specter else contours_pixie_dir()
+    else:
+        outdir = args.output_dir
+    ensure_dir(outdir)
 
     w_mu_inv = W_MU_INV_SPECTER if args.specter else W_MU_INV_PIXIE
 

@@ -1,0 +1,30 @@
+lmax= 84.32578130817491
+CAMB Cl_TT numerical derivatives (from text files in /Users/Shao/Documents/harvard-docs/cora-cosmology/cmb-spectral-distortions/pajer-zaldarriaga/muT_fNL_forecast_2):
+  n_s brackets: 0.963, 0.967  (d n_s = 0.004)
+  A_s brackets: 2.097900e-09, 2.102100e-09  (relative step from spectra.As_brackets_relative)
+  |d Cl_TT/d n_s| on ell grid: min=4.097e-13, max=6.920e-10
+  |d Cl_TT/d A_s| on ell grid: min=1.243e-04, max=6.861e-02 per (Delta_R^2)
+
+CAMB vs analytic Cl_TT average difference on ell grid:
+  CAMB Cl_TT: min=2.610936e-13, max=1.440794e-10, mean=4.734717e-12
+  analytic Cl_TT: min=7.220076e-14, max=8.796459e-11, mean=3.068532e-12
+  mean(CAMB - analytic) = 1.666184e-12
+  mean(|CAMB - analytic|) = 1.666184e-12
+  mean(|CAMB - analytic| / |analytic|) = 1.197668e+00
+
+muT Fisher forecast -- 3 parameters (f_NL, n_s, A_s)
+  l range: 2...85, FWHM = 1.6^\circ, n_s = 0.965
+  mu autospectrum noise: w_mu^-1 = 4.000000e-18 (SPECTER; see beam.N_mu_mu)
+  A_s fid (Delta_R^2 at pivot): 2.100000e-09
+  C_l^TT for noise: CAMB from text files in /Users/Shao/Documents/harvard-docs/cora-cosmology/cmb-spectral-distortions/pajer-zaldarriaga/muT_fNL_forecast_2
+  Prior sigma(n_s) = 0.004
+  Prior sigma(A_s) = 2.940000e-11 (Planck 2018 order-of-magnitude; see spectra.py)
+  numerical b(l, n_s), dns_step = 5e-5
+
+    f_NL fid     sigma(f_NL)      sigma(n_s)      sigma(A_s)  corr(f_NL,n_s)  corr(f_NL,A_s)
+--------------------------------------------------------------------------------------------------
+           0    5.186390e+02    4.000000e-03    2.940000e-11          0.0000         -0.0001
+           1    5.186390e+02    4.000000e-03    2.940000e-11         -0.0001         -0.0001
+       12500    8.782565e+02    4.000000e-03    2.940000e-11         -0.8070         -0.0000
+       25000    1.509430e+03    4.000000e-03    2.940000e-11         -0.9391         -0.0000
+
