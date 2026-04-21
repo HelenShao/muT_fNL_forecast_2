@@ -11,9 +11,10 @@ from pathlib import Path
 import numpy as np
 
 from beam import W_MU_INV_PIXIE, W_MU_INV_SPECTER, ell_max_from_fwhm_deg
+from config_section4 import A_D_CODE, SIGMA_AD_PRIOR, SIGMA_ALPHA_PRIOR, SIGMA_NS_PRIOR
+from config_section_common import FWHM_PIXIE, FWHM_SPECTER, K_D_F, K_D_I, K_P, NS_FID
 from fisher_foreground import AZZONI_ALPHA_D, ELL0_AZZONI, fisher_muT_fnl_ns_with_dust
 from output_paths import ensure_section_layout
-from run_section4 import A_D_CODE, K_D_F, K_D_I, K_P, NS_FID
 from spectra import AS_FID_PLANCK2018
 
 try:
@@ -21,8 +22,6 @@ try:
 except ImportError:
     from plot_params import apply_plot_params
 
-FWHM_PIXIE = 1.6
-FWHM_SPECTER = 1.0
 # Full Cabass-style scans to 1000 are expensive with numerical b(ell); override with --lmax-cap.
 LMAX_MAX = 1000
 # Upper end of the \(\ell_{\max}\) axis (log scale; data may extend further; axis clips here).
@@ -117,9 +116,9 @@ def run_one_fnl(
                 alpha_D=AZZONI_ALPHA_D,
                 ell0=ELL0_AZZONI,
                 As_fid=as_fid,
-                sigma_ns_prior=0.004,
-                sigma_AD_prior=1e12,
-                sigma_alpha_prior=1e6,
+                sigma_ns_prior=SIGMA_NS_PRIOR,
+                sigma_AD_prior=SIGMA_AD_PRIOR,
+                sigma_alpha_prior=SIGMA_ALPHA_PRIOR,
                 use_b_analytic=use_b_analytic,
                 cl_tt_txt_dir=cl_tt_dir,
             )

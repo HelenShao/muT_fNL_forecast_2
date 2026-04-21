@@ -7,6 +7,8 @@ import argparse
 import numpy as np
 
 from beam import W_MU_INV_PIXIE, W_MU_INV_SPECTER
+from config_section4 import A_D_CODE, SIGMA_AD_PRIOR, SIGMA_ALPHA_PRIOR, SIGMA_NS_PRIOR
+from config_section_common import FWHM_PIXIE, FWHM_SPECTER, K_D_F, K_D_I, K_P, NS_FID
 from fisher_foreground import AZZONI_ALPHA_D, ELL0_AZZONI, fisher_muT_fnl_ns_with_dust
 from fisher_matrix import default_ell_grid
 from output_paths import ensure_section_layout
@@ -15,11 +17,6 @@ try:
     from .plot_params import apply_plot_params
 except ImportError:
     from plot_params import apply_plot_params
-
-from run_section4 import A_D_CODE, K_D_F, K_D_I, K_P, NS_FID
-
-FWHM_PIXIE = 1.6
-FWHM_SPECTER = 1.0
 
 # 68% joint ellipse for 2D Gaussian: (θ - θ_fid)^T Σ^{-1} (θ - θ_fid) = Δχ²
 # with Σ the marginalized (f_NL, n_s) covariance. Δχ² ≈ 2.30 for ~68.3% (1/0.434).
@@ -58,9 +55,9 @@ def main():
             A_D=A_D_CODE,
             alpha_D=AZZONI_ALPHA_D,
             ell0=ELL0_AZZONI,
-            sigma_ns_prior=0.004,
-            sigma_AD_prior=1e12,
-            sigma_alpha_prior=1e6,
+            sigma_ns_prior=SIGMA_NS_PRIOR,
+            sigma_AD_prior=SIGMA_AD_PRIOR,
+            sigma_alpha_prior=SIGMA_ALPHA_PRIOR,
             use_b_analytic=False,
         )
         ic = {n: j for j, n in enumerate(r.param_names)}

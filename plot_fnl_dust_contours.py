@@ -8,19 +8,17 @@ import os
 import numpy as np
 
 from beam import W_MU_INV_PIXIE, W_MU_INV_SPECTER
+from config_section4 import A_D_CODE, SIGMA_AD_PRIOR, SIGMA_ALPHA_PRIOR, SIGMA_NS_PRIOR
+from config_section_common import FWHM_PIXIE, FWHM_SPECTER, K_D_F, K_D_I, K_P, NS_FID
 from fisher_foreground import AZZONI_ALPHA_D, ELL0_AZZONI, fisher_muT_fnl_ns_with_dust
 from fisher_matrix import default_ell_grid
 from output_paths import ensure_section_layout
-from run_section4 import A_D_CODE, K_D_F, K_D_I, K_P, NS_FID
 from spectra import AS_FID_PLANCK2018
 
 try:
     from .plot_params import apply_plot_params
 except ImportError:
     from plot_params import apply_plot_params
-
-FWHM_PIXIE = 1.6
-FWHM_SPECTER = 1.0
 
 # Joint 68% / 95% for 2 Gaussian parameters (same as main_3d.py / contours.py)
 DELTA_CHI2_LEVELS_2D = (2.30, 5.99, 9.21)
@@ -147,9 +145,9 @@ def main():
         alpha_D=AZZONI_ALPHA_D,
         ell0=ELL0_AZZONI,
         As_fid=AS_FID_PLANCK2018,
-        sigma_ns_prior=0.004,
-        sigma_AD_prior=1e12,
-        sigma_alpha_prior=1e6,
+        sigma_ns_prior=SIGMA_NS_PRIOR,
+        sigma_AD_prior=SIGMA_AD_PRIOR,
+        sigma_alpha_prior=SIGMA_ALPHA_PRIOR,
         use_b_analytic=camb,
         cl_tt_txt_dir=cl_tt_dir,
     )
