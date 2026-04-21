@@ -31,8 +31,6 @@ Run all commands from `muT_fNL_forecast_2/`.
 
 ```bash
 python3 scripts/run_section1_baseline.py
-# Backward-compatible top-level entrypoint also works:
-# python3 run_section1_baseline.py
 ```
 
 Key output tables:
@@ -44,8 +42,6 @@ Key output tables:
 ```bash
 python3 scripts/sigma_fnl_vs_lmax.py --experiment pixie
 python3 scripts/sigma_fnl_vs_lmax.py --experiment specter
-# Backward-compatible top-level entrypoint also works:
-# python3 sigma_fnl_vs_lmax.py --experiment pixie
 ```
 
 Key outputs:
@@ -57,8 +53,6 @@ Key outputs:
 
 ```bash
 python3 scripts/run_section3.py
-# Backward-compatible top-level entrypoint also works:
-# python3 run_section3.py
 ```
 
 Key outputs:
@@ -72,8 +66,6 @@ Key outputs:
 
 ```bash
 python3 scripts/run_section4.py
-# Backward-compatible top-level entrypoint also works:
-# python3 run_section4.py
 ```
 
 Key outputs:
@@ -90,7 +82,6 @@ python3 plots/plot_fnl_ns_dust_marg_overlay.py --fnl-fid 1 --cf 1000 --pipeline 
 python3 plots/plot_fnl_ns_cf.py --experiment pixie --fnl-fid 25000
 python3 plots/plot_fnl_ns_cf.py --experiment specter --fnl-fid 25000
 python3 plots/plot_sigma_fnl_vs_lmax_cf.py --experiment specter --fnl-fid 1 --pipeline analytic_cltt_analytic_b
-# Backward-compatible top-level plot entrypoints also work.
 ```
 
 ## 3) Optional: CosmicFish triangle plots
@@ -101,7 +92,6 @@ If CosmicFish is installed:
 export COSMICFISH_PYTHON=/path/to/CosmicFish/python
 python3 scripts/run_section3_cosmicfish_triangles.py
 python3 scripts/run_section4_cosmicfish_triangles.py --fnl-fid 1 --cf 1000 --modes specter,pixie,overlay --pipeline analytic_cltt_analytic_b
-# Backward-compatible top-level entrypoints also work.
 ```
 
 ## 4) Output organization
